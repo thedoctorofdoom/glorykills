@@ -1,0 +1,54 @@
+class GK_EquipmentHandler : EventHandler
+{
+	bool prevGloryMelee[MAXPLAYERS];
+
+	override void WorldTick()
+	{
+		for (int i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i]) continue;
+
+			let pmo = players[i].mo;
+			if (pmo == null || pmo.health <= 0) continue;
+
+			let weap = players[i].ReadyWeapon;
+			if (weap == null) continue;
+
+			bool hasGloryMelee = pmo.CountInv("DoGloryMelee") > 0;
+
+			if (pmo.CountInv("CantDoAction") > 0)
+			{
+				prevGloryMelee[i] = hasGloryMelee;
+				continue;
+			}
+
+			let pbWeap = PB_WeaponBase(weap);
+			if (pbWeap && pbWeap.executingEnemy)
+			{
+				prevGloryMelee[i] = hasGloryMelee;
+				continue;
+			}
+
+			if (hasGloryMelee && !prevGloryMelee[i])
+			{
+				State st = weap.FindState("GloryMelee");
+				if (st)
+				{
+					players[i].SetPSprite(PSP_WEAPON, st);
+				}
+			}
+			prevGloryMelee[i] = hasGloryMelee;
+
+			if (pmo.CountInv("DoShoulderCannon") > 0)
+			{
+				pmo.TakeInventory("DoShoulderCannon", 1);
+
+				State st = weap.FindState("FireShoulderCannon");
+				if (st)
+				{
+					players[i].SetPSprite(PSP_WEAPON, st);
+				}
+			}
+		}
+	}
+}

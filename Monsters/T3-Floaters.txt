@@ -1,0 +1,456 @@
+Actor PB_AfritGK: PB_Afrit replaces PB_Afrit
+{
+	DropItem "Demonpickup2" 160
+	DropItem "Demonpickup" 255
+	DropItem "Crucible" 3
+	WoundHealth 100
+	
+	States
+	{
+  	Wound:
+		"####" "#" 1
+		{
+			if(GetCvar("be_ExecutionsON"))
+			{
+				if(countinv("FinisherToken")==0) //if it isnt healing already
+				{								//will heal and give the token that indicates it's executable
+					A_SpawnItemEx("CacoHighlight",0,0,0,0,0,0,0,SXF_SETMASTER|SXF_NOCHECKPOSITION); //to highlight if ON, and to remove the token after the monster heals
+					A_GiveInventory("FinisherToken",1);	//token to allow melee attack to execute
+					A_GiveToTarget("BloodPunchKilled",1); // Check BloodPunch
+				}
+				
+				if(GetCvar(be_MonsterStagger)==1) //will the monsters stagger at all?
+				{
+					A_ChangeFlag (NOGRAVITY, 0);
+					return state("Stagger");	//stays there for a few seconds
+				}
+				else
+				{
+					return state(0);
+				}
+			}
+			return state(0);
+		}
+		Goto See
+	Stagger:
+		FRIT H 0
+		{
+			if(getcvar(be_ExecutionHighlight)==1)
+			{	return state("PrepareStaggerHighlight");}
+			else
+			{	return state("StagLooper");	}
+		}
+		Goto StagLooper
+	PrepareStaggerHighlight:
+		//RFTR X 0
+		FRIG H 4
+		Goto StagLooper
+	
+	StagLooper:
+		"####" "#" 1
+		{
+			if(!countinv("FinisherToken"))
+			{
+				A_ChangeFlag (NOGRAVITY, 1);
+				return state("See");
+			}
+			if(getcvar(be_NoisyStagger) && countinv("PainSoundToken"))
+			{ 
+				A_Pain; 
+				A_TakeInventory("PainSoundToken");
+			}
+			return state(0);
+		}
+		Loop
+	
+	Death.GloryKill:
+		
+		Goto Death.Fatality
+  
+  	Death.Crucible:
+		TNT1 A 0 A_SpawnItemEx("GlorySawPinataHight",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death.cut	
+		
+	Death.GloryFire:
+		TNT1 A 0 A_SpawnItemEx("FlamePinataSpawnHigh",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death.Vanish
+	
+	Pain.GloryFire:
+		TNT1 A 0 A_Jump(192, "See")
+		TNT1 A 0 A_SpawnItemEx("FlamePinataSpawnHigh",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto See
+	
+	Death.BloodPunch:
+		TNT1 A 0 A_GiveToTarget("BloodPunchKilled",1)
+		TNT1 A 0 A_GiveToTarget("BloodPunchArmor",1)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0 A_SpawnItemEx("GlorySawPinataHight",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death.QuadBlast
+		
+	Pain.BloodPunch:
+		TNT1 A 0 A_GiveToTarget("BloodPunchKilled",1)
+		TNT1 A 0 A_GiveToTarget("BloodPunchArmor",1)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		Goto Super::Pain.Stun
+		
+	Death.Execution:
+		TNT1 A 0 {
+ 			A_Stopsound;
+			A_FaceTarget;
+			A_NoBlocking;
+		}
+		FRIT ST 4 
+		TNT1 A 0 A_Pain
+		FRIT H 21
+		TNT1 A 0 A_Recoil(4)
+		TNT1 A 0 A_GiveToTarget("BPtoken",3)
+		TNT1 A 0 A_SpawnItemEx("GloryMedPinataSpawn2",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death.SSG	
+	}
+}
+
+ACTOR PB_InfernalCacoGK : PB_InfernalCaco replaces PB_InfernalCaco
+{
+	DropItem "HasteSphere" 4
+	DropItem "DoubleSphere" 2
+	DropItem "Demonpickup2" 65
+	DropItem "Demonpickup" 255
+	DropItem "Crucible" 3
+	WoundHealth 85
+
+	States 
+	{ 
+	Wound:
+		"####" "#" 1
+		{
+			if(GetCvar("be_ExecutionsON"))
+			{
+				if(countinv("FinisherToken")==0) //if it isnt healing already
+				{								//will heal and give the token that indicates it's executable
+					A_SpawnItemEx("CacoHighlight",0,0,0,0,0,0,0,SXF_SETMASTER|SXF_NOCHECKPOSITION); //to highlight if ON, and to remove the token after the monster heals
+					A_GiveInventory("FinisherToken",1);	//token to allow melee attack to execute
+					A_GiveToTarget("BloodPunchKilled",1); // Check BloodPunch
+				}
+				
+				if(GetCvar(be_MonsterStagger)==1) //will the monsters stagger at all?
+				{
+					A_ChangeFlag (NOGRAVITY, 0);
+					return state("Stagger");	//stays there for a few seconds
+				}
+				else
+				{
+					return state(0);
+				}
+			}
+			return state(0);
+		}
+		Goto See
+	Stagger:
+		INFR K 0
+		{
+			if(getcvar(be_ExecutionHighlight)==1)
+			{	return state("PrepareStaggerHighlight");}
+			else
+			{	return state("StagLooper");	}
+		}
+		Goto StagLooper
+	PrepareStaggerHighlight:
+		//RFTR X 0
+		INFG K 3
+		Goto StagLooper
+	
+	StagLooper:
+		"####" "#" 1
+		{
+			if(!countinv("FinisherToken"))
+			{
+				A_ChangeFlag (NOGRAVITY, 1);
+				return state("See");
+			}
+			if(getcvar(be_NoisyStagger) && countinv("PainSoundToken"))
+			{ 
+				A_Pain; 
+				A_TakeInventory("PainSoundToken");
+			}
+			return state(0);
+		}
+		Loop
+	   
+	Death.Crucible:
+		TNT1 A 0 A_SpawnItemEx("GlorySawPinataHight",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death
+	   
+	Death.GloryFire:
+		TNT1 A 0 A_SpawnItemEx("FlamePinataSpawn",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death  
+	
+	Pain.GloryFire:
+		TNT1 A 0 A_Jump(192, "See")
+		TNT1 A 0 A_SpawnItemEx("FlamePinataSpawn",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto See
+	
+	Death.BloodPunch:
+		TNT1 A 0 A_GiveToTarget("BloodPunchKilled",1)
+		TNT1 A 0 A_GiveToTarget("BloodPunchArmor",1)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0 A_SpawnItemEx("GlorySawPinataHight",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death
+	  
+	Pain.BloodPunch:
+		TNT1 A 0 A_GiveToTarget("BloodPunchKilled",1)
+		TNT1 A 0 A_GiveToTarget("BloodPunchArmor",1)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		Goto Super::Pain.Stun
+
+	Death.Execution:
+		TNT1 A 0 {
+ 			A_Stopsound;
+			A_FaceTarget;
+			A_NoBlocking;
+		}
+		INFR BC 4 
+		TNT1 A 0 A_Pain
+		INFR K 21
+		TNT1 A 0 A_Recoil(4)
+		TNT1 A 0 A_GiveToTarget("BPtoken",3)
+		TNT1 A 0 A_SpawnItemEx("GloryMedPinataSpawn2",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death
+
+	}
+}
+
+ACTOR PB_PainElementalGK: PB_PainElemental Replaces PB_PainElemental
+{
+	DropItem "Demonpickup" 128
+	DropItem "Crucible" 3
+	WoundHealth 100
+	
+	States
+	{
+	Wound:
+		"####" "#" 1
+		{
+			if(GetCvar("be_ExecutionsON"))
+			{
+				if(countinv("FinisherToken")==0) //if it isnt healing already
+				{								//will heal and give the token that indicates it's executable
+					A_SpawnItemEx("PainElementalHighlight",0,0,0,0,0,0,0,SXF_SETMASTER|SXF_NOCHECKPOSITION); //to highlight if ON, and to remove the token after the monster heals
+					A_GiveInventory("FinisherToken",1);	//token to allow melee attack to execute
+					A_GiveToTarget("BloodPunchKilled",1); // Check BloodPunch
+				}
+				
+				if(GetCvar(be_MonsterStagger)==1) //will the monsters stagger at all?
+				{
+					A_ChangeFlag (NOGRAVITY, 0);
+					return state("Stagger");	//stays there for a few seconds
+				}
+				else
+				{
+					return state(0);
+				}
+			}
+			return state(0);
+		}
+		Goto See
+	Stagger:
+		PAIN G 0 
+		{
+			if(getcvar(be_ExecutionHighlight)==1)
+			{	return state("PrepareStaggerHighlight");}
+			else
+			{	return state("StagLooper");	}
+		}
+		Goto StagLooper
+	PrepareStaggerHighlight:
+		//RFTR X 0
+		PGIN G 0
+		Goto StagLooper
+	
+	StagLooper:
+		"####" "#" 1
+		{
+			if(!countinv("FinisherToken"))
+			{
+				A_ChangeFlag (NOGRAVITY, 1);
+				return state("See");
+			}
+			if(getcvar(be_NoisyStagger) && countinv("PainSoundToken"))
+			{ 
+				A_Pain; 
+				A_TakeInventory("PainSoundToken");
+			}
+			return state(0);
+		}
+		Loop
+	
+	Death.Crucible:
+		TNT1 A 0 A_SpawnItemEx("GlorySawPinataHight",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death
+	
+	Death.GloryFire:
+		TNT1 A 0 A_SpawnItemEx("FlamePinataSpawn",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death
+	
+	Pain.GloryFire:
+		TNT1 A 0 A_Jump(192, "See")
+		TNT1 A 0 A_SpawnItemEx("FlamePinataSpawn",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto See
+	
+	Death.BloodPunch:
+		TNT1 A 0 A_GiveToTarget("BloodPunchKilled",1)
+		TNT1 A 0 A_GiveToTarget("BloodPunchArmor",1)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0 A_SpawnItemEx("GlorySawPinataHight",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death
+	
+	Pain.BloodPunch:
+		TNT1 A 0 A_GiveToTarget("BloodPunchKilled",1)
+		TNT1 A 0 A_GiveToTarget("BloodPunchArmor",1)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		Goto Super::Pain.Stun
+		
+	Death.Execution:
+		TNT1 A 0 {
+ 			A_Stopsound;
+			A_FaceTarget;
+			A_NoBlocking;
+		}
+		PAIN DE 4 
+		TNT1 A 0 A_Pain
+		PAIN G 21
+		TNT1 A 0 A_Recoil(20)
+		TNT1 A 0 A_GiveToTarget("BPtoken",2)
+		TNT1 A 0 A_SpawnItemEx("GloryMedPinataSpawn2",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death	
+	}
+}
+
+ACTOR PB_SufferingElementalGK: PB_SufferingElemental replaces PB_SufferingElemental
+{
+	DropItem "Demonpickup" 168
+	DropItem "Crucible" 3
+	WoundHealth 105
+	
+   States 
+   {
+   	Wound:
+		"####" "#" 1
+		{
+			if(GetCvar("be_ExecutionsON"))
+			{
+				if(countinv("FinisherToken")==0) //if it isnt healing already
+				{								//will heal and give the token that indicates it's executable
+					A_SpawnItemEx("PainElementalHighlight",0,0,0,0,0,0,0,SXF_SETMASTER|SXF_NOCHECKPOSITION); //to highlight if ON, and to remove the token after the monster heals
+					A_GiveInventory("FinisherToken",1);	//token to allow melee attack to execute
+					A_GiveToTarget("BloodPunchKilled",1); // Check BloodPunch
+				}
+				
+				if(GetCvar(be_MonsterStagger)==1) //will the monsters stagger at all?
+				{
+					A_ChangeFlag (NOGRAVITY, 0);
+					return state("Stagger");	//stays there for a few seconds
+				}
+				else
+				{
+					return state(0);
+				}
+			}
+			return state(0);
+		}
+		Goto See
+	Stagger:
+		PL3M G 0
+		{
+			if(getcvar(be_ExecutionHighlight)==1)
+			{	return state("PrepareStaggerHighlight");}
+			else
+			{	return state("StagLooper");	}
+		}
+		Goto StagLooper
+	PrepareStaggerHighlight:
+		//RFTR X 0
+		PL3G G 6
+		Goto StagLooper
+	
+	StagLooper:
+		"####" "#" 1
+		{
+			if(!countinv("FinisherToken"))
+			{
+				A_ChangeFlag (NOGRAVITY, 1);
+				return state("See");
+			}
+			if(getcvar(be_NoisyStagger) && countinv("PainSoundToken"))
+			{ 
+				A_Pain; 
+				A_TakeInventory("PainSoundToken");
+			}
+			return state(0);
+		}
+		Loop
+   
+   	Death.Crucible:
+		TNT1 A 0 A_SpawnItemEx("GlorySawPinataHight",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death
+   
+   	Death.GloryFire:
+		TNT1 A 0 A_SpawnItemEx("FlamePinataSpawnHigh",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death
+   
+	Pain.GloryFire:
+		TNT1 A 0 A_Jump(192, "See")
+		TNT1 A 0 A_SpawnItemEx("FlamePinataSpawnHigh",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto See
+   
+   Death.BloodPunch:
+		TNT1 A 0 A_GiveToTarget("BloodPunchKilled",1)
+		TNT1 A 0 A_GiveToTarget("BloodPunchArmor",1)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0 A_SpawnItemEx("GlorySawPinataHight",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death
+   
+   Pain.BloodPunch:
+		TNT1 A 0 A_GiveToTarget("BloodPunchKilled",1)
+		TNT1 A 0 A_GiveToTarget("BloodPunchArmor",1)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		TNT1 A 0	A_SpawnItemEx("BloodpunchWave", 0, 0, Height / 2, 0, 0, 0, 0, SXF_CLIENTSIDE|SXF_TRANSFERPITCH)
+		Goto Super::Pain.Stun
+		
+	Death.Execution:
+		TNT1 A 0 {
+ 			A_Stopsound;
+			A_FaceTarget;
+			A_NoBlocking;
+		}
+		PL3M DE 4 
+		TNT1 A 0 A_Pain
+		PL3M G 21
+		TNT1 A 0 A_Recoil(20)
+		TNT1 A 0 A_GiveToTarget("BPtoken",3)
+		TNT1 A 0 A_SpawnItemEx("GloryMedPinataSpawn2",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360))
+		Goto Super::Death	
+	}
+}

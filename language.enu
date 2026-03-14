@@ -1,0 +1,4 @@
+[enu default]
+
+GOTPINATAHEALTH = "Picked up some Health.";
+GOTPINATAARMOR = "Picked up some Armor.";

@@ -1,0 +1,16 @@
+Version "4.14.0"
+
+#Include "zscript/Monsters/Imps.zc"
+#Include "zscript/Monsters/Sergeants.zc"
+#Include "zscript/Monsters/ZombieMen.zc"
+#Include "zscript/Monsters/ZombieScientist.zc"
+#Include "zscript/Monsters/Cacodemon.zc"
+
+#Include "zscript/Monsters/Arachnotron.zc"
+#Include "zscript/Monsters/BaronOfHell.zc"
+#Include "zscript/Monsters/Commando.zc"
+#Include "zscript/Monsters/HelmetCommando.zc"
+#Include "zscript/Monsters/Mancubus.zc"
+
+#Include "zscript/GloryKills/GK_EquipmentHandler.zsc"
+#Include "zscript/AmmoBonus.zsc"
