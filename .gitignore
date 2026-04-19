@@ -1,1 +1,18 @@
 .DS_Store
+
+# OS / editor metadata
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Cursor workspace metadata (local only)
+.cursor/
+
+# Built mod artifacts
+*.pk3
+*.pk7
+*.wad.bak
+
+# Parent mod reference copy (Project Brutality source, not part of this addon)
+/PB_Staging/
