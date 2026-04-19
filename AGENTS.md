@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a [UZDoom](https://zdoom.org/downloads) mod add-on for **Project Brutality** (master branch / 0.4.1A release). It adds Doom Eternal-style mechanics to Project Brutality:
+This is a [UZDoom](https://zdoom.org/downloads) mod add-on for **Project Brutality**. The **`PB_Staging` branch of this repo** is tailored to stay aligned with upstream **Project Brutality’s [`PB_Staging`](https://github.com/pa1nki113r/Project_Brutality/tree/PB_Staging) branch**, not `master` or the public 0.4.1A release. It adds Doom Eternal-style mechanics to Project Brutality:
 
 - **Glory Kills** — stagger enemies at low health, then execute them for resource drops
 - **Crucible** — energy sword with limited charges
@@ -31,7 +31,7 @@ When evaluating or modifying code in this project, consult these resources:
 
 The parent mod this add-on depends on:
 
-- **Project Brutality (master / 0.4.1A)**: <https://github.com/pa1nki113r/Project_Brutality>
+- **Project Brutality (`PB_Staging` branch)**: <https://github.com/pa1nki113r/Project_Brutality/tree/PB_Staging>
 
 ---
 
@@ -326,14 +326,16 @@ Scripts 6000-6005 are used. Avoid conflicts with PB's own ACS scripts. The alias
 
 ## Compatibility Notes
 
-This add-on targets **PB 0.4.1A (master branch)**. It was originally developed against PB_Staging and ported to the public release. Key compatibility points:
+This **`PB_Staging` branch** targets **Project Brutality’s upstream `PB_Staging` branch** — a moving development line. It is **not** maintained against PB `master` or tagged releases such as 0.4.1A; pairing this add-on with those builds may break as upstream diverges. Re-verify hooks and parents whenever you update your PB checkout.
 
-- `PB_WeaponBase` and all helper functions (`PB_Execute`, `PB_SetUsingMelee`, `PB_SetPlayerExecutionProperties`, `PB_SetReloading`, etc.) are present and compatible in 0.4.1A
-- `PB_FragGrenade` (now a ZScript class in PB's `SuperGL.zs`) remains compatible as a parent for `SC_CryoGrenade`
-- `FlamethrowerMissileNew` (in PB's `FlamerStuff.zsc`) remains compatible as a parent for `SCFireMissile`
-- `PB_Fuel`, `PB_RocketAmmo` ammo classes are present in 0.4.1A
-- The VFS override mechanism (addon's `BaseWeapon_Melee.zsc` replaces PB's version) works correctly with PB 0.4.1A's include chain
-- `BaseWeapon_Functions.zsc` must **not** be shipped — PB 0.4.1A's own version is loaded from PB's archive. Overriding it broke PB features.
+Key compatibility points (assumed true for a current `PB_Staging` sync; confirm against your PB tree):
+
+- `PB_WeaponBase` and the helper functions this add-on calls (`PB_Execute`, `PB_SetUsingMelee`, `PB_SetPlayerExecutionProperties`, `PB_SetReloading`, etc.) must still exist and match expected signatures
+- `PB_FragGrenade` (ZScript in PB’s `SuperGL.zs`) must remain a valid parent for `SC_CryoGrenade`
+- `FlamethrowerMissileNew` (in PB’s `FlamerStuff.zsc`) must remain a valid parent for `SCFireMissile`
+- `PB_Fuel`, `PB_RocketAmmo` ammo classes must exist where this add-on expects them
+- The VFS override mechanism (add-on `BaseWeapon_Melee.zsc` replaces PB’s version) must remain valid for PB’s include chain on `PB_Staging`
+- `BaseWeapon_Functions.zsc` must **not** be shipped in the add-on — PB’s own version must load from PB’s archive; shipping a stale override breaks PB features
 
 ---
 

@@ -1,6 +1,6 @@
 # Glory Kills for Project Brutality
 
-A **Doom Eternal**-inspired add-on for [Project Brutality](https://github.com/pa1nki113r/Project_Brutality) (0.4.1A / master branch). Brings glory kills, the Crucible, Blood Punch, and an Equipment Launcher to PB.
+A **Doom Eternal**-inspired add-on for [Project Brutality](https://github.com/pa1nki113r/Project_Brutality). This repository’s **`PB_Staging` branch** is maintained in lockstep with upstream **Project Brutality’s [`PB_Staging`](https://github.com/pa1nki113r/Project_Brutality/tree/PB_Staging) branch** — not `master` or the public 0.4.1A release line. Brings glory kills, the Crucible, Blood Punch, and an Equipment Launcher to PB.
 
 ## Features
 
@@ -13,7 +13,9 @@ A **Doom Eternal**-inspired add-on for [Project Brutality](https://github.com/pa
 ## Requirements
 
 - [UZDoom 4.14.3+](https://zdoom.org/downloads) (the successor to GZDoom)
-- [Project Brutality 0.4.1A](https://github.com/pa1nki113r/Project_Brutality) (master branch)
+- **Project Brutality** built from the **[`PB_Staging`](https://github.com/pa1nki113r/Project_Brutality/tree/PB_Staging)** branch (clone that branch and load your PB build before this add-on). Using PB `master` or a release pk3 may work by coincidence but is **not** what this branch targets.
+
+If you need an add-on aligned with PB `master` / 0.4.1A, use the corresponding branch of this repo (if one exists), not `PB_Staging`.
 
 ## Installation
 
