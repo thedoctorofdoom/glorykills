@@ -16,3 +16,7 @@ desktop.ini
 
 # Parent mod reference copy (Project Brutality source, not part of this addon)
 /PB_Staging/
+
+# Local-only audit notes (upstream sync writeups, smoke-test logs, scratch investigations)
+/docs/
+/execution_sound_investigation.md
