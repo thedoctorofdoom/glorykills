@@ -4,7 +4,7 @@ Actor GloryLowPinataSpawnH
 	{
 		Spawn:
 			TNT1 A 0 Nodelay A_JumpIf(GetCvar("be_GKBonus") == 0,"NoSpawn")
-			TNT1 AAA 0 A_SpawnItemEx("HealthPinataPermL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAA 0 A_SpawnItemEx("GK_CrueltyHPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
 			TNT1 A 0 A_JumpIf(GetCvar("be_AmmoBonus") == 1,"AmmoSpawn")
 			Stop
 		AmmoSpawn:
@@ -22,12 +22,12 @@ Actor GloryLowPinataSpawn2H
 	{
 		Spawn:
 			TNT1 A 0 Nodelay A_JumpIf(GetCvar("be_GKBonus") == 0,"NoSpawn")
-			TNT1 AAA 0 A_SpawnItemEx("HealthPinataPermL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAA 0 A_SpawnItemEx("GK_CrueltyHPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
 			TNT1 A 0 A_JumpIf(GetCvar("be_AdditionalBonus") == 1,"Spawn2")
 			TNT1 A 0 A_JumpIf(GetCvar("be_AmmoBonus") == 1,"AmmoSpawn")
 			stop
 		Spawn2:
-			TNT1 A 0 A_SpawnItemEx("HealthPinataPermL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 A 0 A_SpawnItemEx("GK_CrueltyHPBonusL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
 			TNT1 A 0 A_JumpIf(GetCvar("be_AmmoBonus") == 1,"AmmoSpawn")
 			stop	
 		AmmoSpawn:
@@ -45,8 +45,8 @@ Actor GloryMedPinataSpawnH
 	{
 		Spawn:
 			TNT1 A 0 Nodelay A_JumpIf(GetCvar("be_GKBonus") == 0,"NoSpawn")
-			TNT1 AAA 0 A_SpawnItemEx("HealthPinataPermL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
-			TNT1 AAA 0 A_SpawnItemEx("ArmorPinataL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAA 0 A_SpawnItemEx("GK_CrueltyHPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAA 0 A_SpawnItemEx("GK_CrueltyAPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
 			TNT1 A 0 A_JumpIf(GetCvar("be_AmmoBonus") == 1,"AmmoSpawn")
 			Stop	
 		AmmoSpawn:
@@ -64,14 +64,14 @@ Actor GloryMedPinataSpawn2H
 	{
 		Spawn:
 			TNT1 A 0 Nodelay A_JumpIf(GetCvar("be_GKBonus") == 0,"NoSpawn")
-			TNT1 AAA 0 A_SpawnItemEx("HealthPinataPermL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
-			TNT1 AAA 0 A_SpawnItemEx("ArmorPinataL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAA 0 A_SpawnItemEx("GK_CrueltyHPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAA 0 A_SpawnItemEx("GK_CrueltyAPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
 			TNT1 A 0 A_JumpIf(GetCvar("be_AdditionalBonus") == 1,"Spawn2")
 			TNT1 A 0 A_JumpIf(GetCvar("be_AmmoBonus") == 1,"AmmoSpawn")
 			Stop
 		Spawn2:
-			TNT1 A 0 A_SpawnItemEx("HealthPinataPermL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
-			TNT1 A 0 A_SpawnItemEx("ArmorPinataL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 A 0 A_SpawnItemEx("GK_CrueltyHPBonusL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 A 0 A_SpawnItemEx("GK_CrueltyAPBonusL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
 			TNT1 A 0 A_JumpIf(GetCvar("be_AmmoBonus") == 1,"AmmoSpawn")
 			stop
 		AmmoSpawn:
@@ -89,8 +89,8 @@ Actor GloryHightPinataSpawnH
 	{
 		Spawn:
 			TNT1 A 0 Nodelay A_JumpIf(GetCvar("be_GKBonus") == 0,"NoSpawn")
-			TNT1 AAAAA 0 A_SpawnItemEx("HealthPinataPermL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
-			TNT1 AAAAA 0 A_SpawnItemEx("ArmorPinataL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAAAA 0 A_SpawnItemEx("GK_CrueltyHPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAAAA 0 A_SpawnItemEx("GK_CrueltyAPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
 			TNT1 A 0 A_JumpIf(GetCvar("be_AmmoBonus") == 1,"AmmoSpawn")
 			stop		
 		AmmoSpawn:
@@ -109,14 +109,14 @@ Actor GloryHightPinataSpawn2H
 	{
 		Spawn:
 			TNT1 A 0 Nodelay A_JumpIf(GetCvar("be_GKBonus") == 0,"NoSpawn")
-			TNT1 AAAAA 0 A_SpawnItemEx("HealthPinataPermL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
-			TNT1 AAAAA 0 A_SpawnItemEx("ArmorPinataL0",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAAAA 0 A_SpawnItemEx("GK_CrueltyHPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AAAAA 0 A_SpawnItemEx("GK_CrueltyAPBonus",0,0,16,random(0,8),0,random(0,8),random(0,360))
 			TNT1 A 0 A_JumpIf(GetCvar("be_AdditionalBonus") == 1,"Spawn2")
 			TNT1 A 0 A_JumpIf(GetCvar("be_AmmoBonus") == 1,"AmmoSpawn")
 			Stop	
 		Spawn2:
-			TNT1 AA 0 A_SpawnItemEx("HealthPinataPermL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
-			TNT1 AA 0 A_SpawnItemEx("ArmorPinataL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AA 0 A_SpawnItemEx("GK_CrueltyHPBonusL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
+			TNT1 AA 0 A_SpawnItemEx("GK_CrueltyAPBonusL1",0,0,16,random(0,8),0,random(0,8),random(0,360))
 			TNT1 A 0 A_JumpIf(GetCvar("be_AmmoBonus") == 1,"AmmoSpawn")
 			stop
 		AmmoSpawn:

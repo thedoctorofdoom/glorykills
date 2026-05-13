@@ -1,0 +1,366 @@
+// CrueltyBonus.txt — PB-native pickups with the addon's vacuum FSM bolted on.
+//
+// These four actors replace the legacy HealthPinata/ArmorPinata family used by
+// Glory Kill, Crucible, and Flame Belch spawners. Each one:
+//
+//   - Inherits from PB's PB_CrueltyHPBonus / PB_CrueltyAPBonus so it uses BON3
+//     (HP) or BON4 (AP) sprites with PB's pickup sounds, messages, +FLOATBOB,
+//     and ABCB animation cycle.
+//   - Adds +INVENTORY.ALWAYSPICKUP so the pickup is always consumed when
+//     vacuumed (PB's *Dropped parents strip ALWAYSPICKUP).
+//   - Overrides the Spawn states with the proximity-check + Suckage FSM lifted
+//     from HealthPinata / ArmorPinata (SOULCUBE.txt), with PINH/PINA swapped
+//     for BON3/BON4 cycled through PB's ABCB animation. Constants
+//     (DelayVacuum, RadiusPull, PSpeed, DefPtr, NullPtr, sv_bonusrange) come
+//     from ParticleEffect.txt and CVARINFO.
+//   - Keeps +FLOATBOB enabled for the actor's entire lifetime — including the
+//     velocity-driven Suckage flight — so the pickup keeps bobbing as it
+//     dances toward the player. The bob amplitude (~8 units) overlays the
+//     A_ChangeVelocity flight path, producing a slightly wavy approach
+//     instead of a straight line.
+//   - Inserts a brief no-action IdleAnim state between Spawn and SpawnLoop so
+//     PB's ABCB animation cycle and FLOATBOB are visible to the player. After
+//     a glory kill the player is already inside RadiusPull, so without an
+//     idle window the proximity check would jump straight to Suckage on tick
+//     0 and the pickup would never get a chance to bob or cycle frames.
+//     (The legacy HealthPinata FSM had the same problem masked by PINH being
+//     a single-frame sprite — its `if (user_timer >= DelayVacuum)` gate
+//     compared the wrong variable, making the intended pre-vacuum delay a
+//     no-op. We preserve that gate verbatim and add the explicit IdleAnim
+//     window to give the new BON3/BON4 visuals room to breathe.)
+//   - Animates continuously through every state: IdleAnim, SpawnLoop, AND
+//     Suckage all cycle BON3/BON4 ABCB at 3 tics per frame, matching PB's
+//     native CrueltyHPBonus/APBonus look. SpawnLoop uses a no-action ABCB
+//     display block followed by a single 0-tic proximity-check frame, so the
+//     animation always plays one full cycle before the actor can transition
+//     to Suckage. Suckage interleaves the ABCB animation frames with 1-tic
+//     velocity/warp pumps, dropping the legacy bright/dim "flash" pattern in
+//     favor of PB's consistent BRIGHT additive glow.
+//
+// The L1 subclasses just bump the per-pickup amount; they inherit the L0 FSM.
+
+ACTOR GK_CrueltyHPBonus : PB_CrueltyHPBonus
+{
+	var int user_timer;
+	var int user_curtime;
+	-COUNTITEM
+	+INVENTORY.ALWAYSPICKUP
+	Inventory.Amount 1
+	Gravity 0.65
+	States
+	{
+	Spawn:
+		TNT1 A 0 A_SetUserVar("user_curtime",0)
+		TNT1 A 0 A_SetUserVar("user_timer",35*11)
+		BON3 A 0
+		{
+			A_SpawnItemEx("BluePinataParticles",0,0,0,0,0,0,0,SXF_NOCHECKPOSITION|SXF_SETMASTER,0,3);
+		}
+	IdleAnim:
+		BON3 ABCB 3 bright
+		BON3 ABCB 3 bright
+	SpawnLoop:
+		BON3 ABCB 3 bright
+		TNT1 A 0
+		{
+			if (user_timer >= DelayVacuum)
+			{
+				A_RearrangePointers(DefPtr,DefPtr,NullPtr,4);
+				if (A_CheckProximity("Null","PlayerPawn",RadiusPull,1,CPXF_CHECKSIGHT|CPXF_SETTRACER|CPXF_ANCESTOR))
+				{
+					return state("Suckage");
+				}
+			}
+			return state(0);
+		}
+	Loop
+	Fade:
+		BON3 A 4 bright A_FadeOut(0.2)
+		BON3 A 4 A_FadeOut(0.2)
+		loop
+	Suckage:
+		BON3 A 3 bright
+		{
+			if(user_curtime > user_timer)
+			{
+				return state("Fade");
+			}
+			else
+			{
+				user_curtime += 3;
+				return state(0);
+			}
+		}
+		"####" "#" 1 bright
+		{
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange + 32 && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_ChangeFlag(NOCLIP,true);
+				A_FaceTracer(0,0,0,0,FAF_MIDDLE);
+				A_SetTics(2); A_ChangeVelocity(cos(-pitch)*PSpeed,0,sin(pitch)*PSpeed,CVF_RELATIVE|CVF_REPLACE);
+			}
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_Warp(TracerPtr,0,0,16,0,WARPF_NOCHECKPOSITION|WARPF_INTERPOLATE|WARPF_STOP);
+				A_ChangeFlag(NOCLIP,false);
+				A_ChangeFlag(NOINTERACTION,false);
+				A_ChangeFlag(NOBLOCKMAP,false);
+			}
+			return state(0);
+		}
+		BON3 B 3 bright
+		{
+			if(user_curtime > user_timer)
+			{
+				return state("Fade");
+			}
+			else
+			{
+				user_curtime += 3;
+				return state(0);
+			}
+		}
+		"####" "#" 1 bright
+		{
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange + 32 && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_ChangeFlag(NOCLIP,true);
+				A_FaceTracer(0,0,0,0,FAF_MIDDLE);
+				A_SetTics(2); A_ChangeVelocity(cos(-pitch)*PSpeed,0,sin(pitch)*PSpeed,CVF_RELATIVE|CVF_REPLACE);
+			}
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_Warp(TracerPtr,0,0,16,0,WARPF_NOCHECKPOSITION|WARPF_INTERPOLATE|WARPF_STOP);
+				A_ChangeFlag(NOCLIP,false);
+				A_ChangeFlag(NOINTERACTION,false);
+				A_ChangeFlag(NOBLOCKMAP,false);
+			}
+			return state(0);
+		}
+		BON3 C 3 bright
+		{
+			if(user_curtime > user_timer)
+			{
+				return state("Fade");
+			}
+			else
+			{
+				user_curtime += 3;
+				return state(0);
+			}
+		}
+		"####" "#" 1 bright
+		{
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange + 32 && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_ChangeFlag(NOCLIP,true);
+				A_FaceTracer(0,0,0,0,FAF_MIDDLE);
+				A_SetTics(2); A_ChangeVelocity(cos(-pitch)*PSpeed,0,sin(pitch)*PSpeed,CVF_RELATIVE|CVF_REPLACE);
+			}
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_Warp(TracerPtr,0,0,16,0,WARPF_NOCHECKPOSITION|WARPF_INTERPOLATE|WARPF_STOP);
+				A_ChangeFlag(NOCLIP,false);
+				A_ChangeFlag(NOINTERACTION,false);
+				A_ChangeFlag(NOBLOCKMAP,false);
+			}
+			return state(0);
+		}
+		BON3 B 3 bright
+		{
+			if(user_curtime > user_timer)
+			{
+				return state("Fade");
+			}
+			else
+			{
+				user_curtime += 3;
+				return state(0);
+			}
+		}
+		"####" "#" 1 bright
+		{
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange + 32 && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_ChangeFlag(NOCLIP,true);
+				A_FaceTracer(0,0,0,0,FAF_MIDDLE);
+				A_SetTics(2); A_ChangeVelocity(cos(-pitch)*PSpeed,0,sin(pitch)*PSpeed,CVF_RELATIVE|CVF_REPLACE);
+			}
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_Warp(TracerPtr,0,0,16,0,WARPF_NOCHECKPOSITION|WARPF_INTERPOLATE|WARPF_STOP);
+				A_ChangeFlag(NOCLIP,false);
+				A_ChangeFlag(NOINTERACTION,false);
+				A_ChangeFlag(NOBLOCKMAP,false);
+			}
+			return state(0);
+		}
+		Loop
+	}
+}
+
+ACTOR GK_CrueltyHPBonusL1 : GK_CrueltyHPBonus
+{
+	Inventory.Amount 2
+}
+
+ACTOR GK_CrueltyAPBonus : PB_CrueltyAPBonus
+{
+	var int user_timer;
+	var int user_curtime;
+	-COUNTITEM
+	+INVENTORY.ALWAYSPICKUP
+	Armor.SaveAmount 2
+	Gravity 0.65
+	States
+	{
+	Spawn:
+		TNT1 A 0 A_SetUserVar("user_curtime",0)
+		TNT1 A 0 A_SetUserVar("user_timer",35*11)
+		BON4 A 0
+		{
+			A_SpawnItemEx("GreenPinataParticles",0,0,0,0,0,0,0,SXF_NOCHECKPOSITION|SXF_SETMASTER,0,3);
+		}
+	IdleAnim:
+		BON4 ABCB 3 bright
+		BON4 ABCB 3 bright
+	SpawnLoop:
+		BON4 ABCB 3 bright
+		TNT1 A 0
+		{
+			if (user_timer >= DelayVacuum)
+			{
+				A_RearrangePointers(DefPtr,DefPtr,NullPtr,4);
+				if (A_CheckProximity("Null","PlayerPawn",RadiusPull,1,CPXF_CHECKSIGHT|CPXF_SETTRACER|CPXF_ANCESTOR))
+				{
+					return state("Suckage");
+				}
+			}
+			return state(0);
+		}
+	Loop
+	Fade:
+		BON4 A 4 bright A_FadeOut(0.2)
+		BON4 A 4 A_FadeOut(0.2)
+		loop
+	Suckage:
+		BON4 A 3 bright
+		{
+			if(user_curtime > user_timer)
+			{
+				return state("Fade");
+			}
+			else
+			{
+				user_curtime += 3;
+				return state(0);
+			}
+		}
+		"####" "#" 1 bright
+		{
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange + 32 && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_ChangeFlag(NOCLIP,true);
+				A_FaceTracer(0,0,0,0,FAF_MIDDLE);
+			}
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_Warp(TracerPtr,0,0,16,0,WARPF_NOCHECKPOSITION|WARPF_INTERPOLATE|WARPF_STOP);
+				A_ChangeFlag(NOCLIP,false);
+				A_ChangeFlag(NOINTERACTION,false);
+				A_ChangeFlag(NOBLOCKMAP,false);
+			}
+			return state(0);
+		}
+		BON4 B 3 bright
+		{
+			if(user_curtime > user_timer)
+			{
+				return state("Fade");
+			}
+			else
+			{
+				user_curtime += 3;
+				return state(0);
+			}
+		}
+		"####" "#" 1 bright
+		{
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange + 32 && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_ChangeFlag(NOCLIP,true);
+				A_FaceTracer(0,0,0,0,FAF_MIDDLE);
+			}
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_Warp(TracerPtr,0,0,16,0,WARPF_NOCHECKPOSITION|WARPF_INTERPOLATE|WARPF_STOP);
+				A_ChangeFlag(NOCLIP,false);
+				A_ChangeFlag(NOINTERACTION,false);
+				A_ChangeFlag(NOBLOCKMAP,false);
+			}
+			return state(0);
+		}
+		BON4 C 3 bright
+		{
+			if(user_curtime > user_timer)
+			{
+				return state("Fade");
+			}
+			else
+			{
+				user_curtime += 3;
+				return state(0);
+			}
+		}
+		"####" "#" 1 bright
+		{
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange + 32 && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_ChangeFlag(NOCLIP,true);
+				A_FaceTracer(0,0,0,0,FAF_MIDDLE);
+			}
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_Warp(TracerPtr,0,0,16,0,WARPF_NOCHECKPOSITION|WARPF_INTERPOLATE|WARPF_STOP);
+				A_ChangeFlag(NOCLIP,false);
+				A_ChangeFlag(NOINTERACTION,false);
+				A_ChangeFlag(NOBLOCKMAP,false);
+			}
+			return state(0);
+		}
+		BON4 B 3 bright
+		{
+			if(user_curtime > user_timer)
+			{
+				return state("Fade");
+			}
+			else
+			{
+				user_curtime += 3;
+				return state(0);
+			}
+		}
+		"####" "#" 1 bright
+		{
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange + 32 && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_ChangeFlag(NOCLIP,true);
+				A_FaceTracer(0,0,0,0,FAF_MIDDLE);
+			}
+			if (GetDistance(true,TracerPtr) <= sv_bonusrange && CountInv("ExecutionToken",TracerPtr) == 0 && CountInv("DoGloryMelee",TracerPtr) == 0)
+			{
+				A_Warp(TracerPtr,0,0,16,0,WARPF_NOCHECKPOSITION|WARPF_INTERPOLATE|WARPF_STOP);
+				A_ChangeFlag(NOCLIP,false);
+				A_ChangeFlag(NOINTERACTION,false);
+				A_ChangeFlag(NOBLOCKMAP,false);
+			}
+			return state(0);
+		}
+		Loop
+	}
+}
+
+ACTOR GK_CrueltyAPBonusL1 : GK_CrueltyAPBonus
+{
+	Armor.SaveAmount 3
+}

@@ -3,6 +3,7 @@
 #Include SOULCUBE.txt
 #Include RANDOMAMMO.txt
 #Include ParticleEffect.txt
+#Include CrueltyBonus.txt
 #Include EquipmentLauncher.txt
 #Include BloodPunch.txt
 #Include HardSettings.txt

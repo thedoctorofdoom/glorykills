@@ -391,13 +391,13 @@ Actor GKDetectCeilCraterIce
     }
 }
 
-Actor FireArmorPinata : ArmorPinata
+Actor FireArmorPinata : GK_CrueltyAPBonus
 {
 	scale 0.4
 	Armor.Saveamount 1
 }
 
-Actor FireArmorPinataL1 : ArmorPinataL1
+Actor FireArmorPinataL1 : GK_CrueltyAPBonusL1
 {
 	Armor.Saveamount 2
 }
