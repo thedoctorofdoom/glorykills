@@ -53,13 +53,14 @@ DECORATE                         ZSCRIPT.zc (Version "4.14.0")
 ├── SOULCUBE.txt                 ├── zscript/Monsters/ZombieMen.zc
 ├── RANDOMAMMO.txt               ├── zscript/Monsters/ZombieScientist.zc
 ├── ParticleEffect.txt           ├── zscript/Monsters/Cacodemon.zc
-├── EquipmentLauncher.txt        ├── zscript/Monsters/Arachnotron.zc
-├── BloodPunch.txt               ├── zscript/Monsters/BaronOfHell.zc
-├── HardSettings.txt             ├── zscript/Monsters/Commando.zc
-├── Monsters/T1-Grunts.txt       ├── zscript/Monsters/HelmetCommando.zc
-├── Monsters/T1-Imps.txt         ├── zscript/Monsters/Mancubus.zc
-├── Monsters/T2-Pinkies.txt      ├── zscript/GloryKills/GK_EquipmentHandler.zsc
-├── Monsters/T3-Arachnos.txt     └── zscript/AmmoBonus.zsc
+├── CrueltyBonus.txt             ├── zscript/Monsters/Arachnotron.zc
+├── EquipmentLauncher.txt        ├── zscript/Monsters/BaronOfHell.zc
+├── BloodPunch.txt               ├── zscript/Monsters/Commando.zc
+├── HardSettings.txt             ├── zscript/Monsters/HelmetCommando.zc
+├── Monsters/T1-Grunts.txt       ├── zscript/Monsters/Mancubus.zc
+├── Monsters/T1-Imps.txt         ├── zscript/GloryKills/GK_EquipmentHandler.zsc
+├── Monsters/T2-Pinkies.txt      └── zscript/AmmoBonus.zsc
+├── Monsters/T3-Arachnos.txt
 ├── Monsters/T3-Fats.txt
 ├── Monsters/T3-Floaters.txt
 ├── Monsters/T3-Revies.txt
@@ -110,6 +111,7 @@ DECORATE                         ZSCRIPT.zc (Version "4.14.0")
 | `Crucible.txt` | `Crucible` pickup, `CrucibleEnergy` token, `CruciblePuff`, `CrucibleBladeWave`, pinata spawner tiers (`GlorySawPinataLow/Med/Hight/Max`) |
 | `SOULCUBE.txt` | `HealthPinata`/`ArmorPinata` base classes with vacuum mechanics, L0-L5 tier variants, `GloryLowPinataSpawn` through `GloryHightPinataSpawn2` spawner actors with hard mode variants |
 | `RANDOMAMMO.txt` | `RandomDice` weighted ammo spawners, ammo pinata actors with vacuum mechanics |
+| `CrueltyBonus.txt` | PB-native health/armor pickups (`PB_CrueltyHPBonus`/`PB_CrueltyAPBonus` subclasses, BON3/BON4 sprites) with the addon's vacuum FSM bolted on — replaces the legacy `HealthPinata`/`ArmorPinata` family used by Glory Kill, Crucible, and Flame Belch spawners. Adds `+INVENTORY.ALWAYSPICKUP` and an `IdleAnim` window so PB's animation/`+FLOATBOB` are visible before vacuum. L1 subclasses bump the per-pickup amount |
 | `EquipmentLauncher.txt` | Flame Belch projectiles (`SCFireMissile`, `SCFireMissileSimple`), Ice Bomb (`SC_CryoGrenade`), flame/ice field effects, inventory tokens (`FlameBelchReady`, `IceBombReady`, `DoFlameBelch`, `DoIceBomb`) |
 | `BloodPunch.txt` | `BPtoken`, `BloodPunchPuff`, `BloodpunchWave`, `BPImpactPuff`, `BloodPunchArmor` |
 | `ParticleEffect.txt` | Colored particle trail actors (`BluePinataParticles`, `GreenPinataParticles`, `RedPinataParticles`, `YellowPinataParticles`, `PinkPinataParticles`, `GoldPinataParticles`) |
@@ -336,6 +338,17 @@ Key compatibility points (assumed true for a current `PB_Staging` sync; confirm 
 - `PB_Fuel`, `PB_RocketAmmo` ammo classes must exist where this add-on expects them
 - The VFS override mechanism (add-on `BaseWeapon_Melee.zsc` replaces PB’s version) must remain valid for PB’s include chain on `PB_Staging`
 - `BaseWeapon_Functions.zsc` must **not** be shipped in the add-on — PB’s own version must load from PB’s archive; shipping a stale override breaks PB features
+
+### PB's native `pb_ExecutionHandler` (May 2026 sync)
+
+PB_Staging now ships its own execution UI: `zscript/Weapons/executionGUI/pb_execution_handler.zs` (an `EventHandler` included by PB's `ZSCRIPT.zc`). It draws a red animated frame around any `bCountKill` monster the player is aiming at within 200 units when the monster's health is `< 20%` of max (or `≤ 54 HP`), with a Berserk-relaxed threshold (`< 25%` or `≤ 150 HP`). It is governed by PB's own user CVars `pb_execution_box` (default `true`) and `pb_execution_indicatorType` (default `4`), exposed in PB's `MENUDEF.txt`. PB's underlying `PB_Execute()` / `actorCanBeExecuted()` logic lives in PB's `BaseWeapon_Functions.zsc`.
+
+This does **not** break GloryKills, but creates two harmless interactions to be aware of:
+
+- **Cosmetic overlap on GK-replaced monsters:** Once a staggered GK monster's health is below PB's 20% threshold, PB's red frame and GloryKills' orange stagger highlight shader can display at the same time. Execution still routes correctly through GloryKills' `PB_ExecuteGK()` / `FinisherToken` flow — the PB indicator is purely visual.
+- **Indicator on non-GK monsters:** PB's frame can appear on monsters GloryKills does **not** replace, suggesting they are executable. With `be_ExecutionsON = true` (the default), GloryKills' `QuickMelee` (in [zscript/GloryKills/BaseWeapon_Glorykill.zsc](zscript/GloryKills/BaseWeapon_Glorykill.zsc)) only calls PB's `PB_Execute()` when `be_ExecutionsON` is false, so quick-melee on those monsters falls through to regular melee. This is pre-existing behavior; PB's new HUD indicator just makes it more visible.
+
+If the double-indicator becomes a concern, hiding PB's frame for GK-staggered monsters would require cooperation from the PB-side `pb_ExecutionHandler` (out of scope for an add-on), or the user can disable it via `pb_execution_box`.
 
 ---
 
