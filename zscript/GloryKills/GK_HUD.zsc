@@ -1,0 +1,111 @@
+class GK_HUD
+{
+	static ui void DrawIcon(String fontName, double x, double y, double virtW, double virtH, double alpha)
+	{
+		TextureID tex = TexMan.CheckForTexture(fontName, TexMan.Type_Any);
+		if (!tex.IsValid()) return;
+		Screen.DrawTexture(tex, true, x, y,
+			DTA_VirtualWidth, int(virtW),
+			DTA_VirtualHeight, int(virtH),
+			DTA_Alpha, alpha,
+			DTA_KeepRatio, true);
+	}
+
+	static ui void GetVirtualSize(int sizeMode, out int virtW, out int virtH)
+	{
+		if (sizeMode == 2) { virtW = 640; virtH = 480; }
+		else if (sizeMode == 1) { virtW = 800; virtH = 600; }
+		else { virtW = 1024; virtH = 768; }
+	}
+
+	static clearscope int GetCVarInt(string name, int fallback = 0)
+	{
+		let cvar = CVar.GetCVar(name);
+		return cvar ? cvar.GetInt() : fallback;
+	}
+
+	static clearscope bool GetCVarBool(string name, bool fallback = false)
+	{
+		let cvar = CVar.GetCVar(name);
+		return cvar ? cvar.GetBool() : fallback;
+	}
+
+	static ui void RenderGloryHUD(PlayerPawn mo)
+	{
+		if (!GetCVarBool("be_fuelhud")) return;
+		if (!mo) return;
+
+		int style = GetCVarInt("sv_fuelhud_background");
+		int sizeMode = GetCVarInt("sv_fuelhud_size");
+		int offX = GetCVarInt("sv_fuelhud_x");
+		int offY = GetCVarInt("sv_fuelhud_y");
+
+		int virtW, virtH;
+		GetVirtualSize(sizeMode, virtW, virtH);
+
+		double cx = virtW / 2.0 + offX;
+		double cy = virtH / 2.0 + offY;
+
+		int bp = mo.CountInv("BPtoken");
+		int crucibleAmmo = mo.CountInv("CrucibleEnergy");
+		bool fbReady = mo.CountInv("FlameBelchReady") > 0;
+		bool ibReady = mo.CountInv("IceBombReady") > 0;
+
+		if (style == 0)
+		{
+			DrawIcon("Blank", cx, cy, virtW, virtH, 0.85);
+			DrawIcon("Blank", cx, cy, virtW, virtH, 0.85);
+			DrawIcon("Blank", cx, cy, virtW, virtH, 0.85);
+			DrawIcon("Blank", cx, cy, virtW, virtH, 0.85);
+			DrawIcon("Blank", cx, cy, virtW, virtH, 0.85);
+			return;
+		}
+
+		if (style == 1)
+		{
+			double offset = -3;
+			String equipFont = "CRUCPA03";
+			if (fbReady) equipFont = "CRUCPA01";
+			else if (ibReady) equipFont = "CRUCPA02";
+			DrawIcon(equipFont, cx, cy + offset - 12, virtW, virtH, 0.75);
+
+			String crFont = "CRAMMO03";
+			if (crucibleAmmo < 1) crFont = "CRAMMO00";
+			else if (crucibleAmmo < 2) crFont = "CRAMMO01";
+			else if (crucibleAmmo < 3) crFont = "CRAMMO02";
+			DrawIcon(crFont, cx, cy - 12, virtW, virtH, 0.85);
+
+			DrawIcon("FUELPA01", cx, cy, virtW, virtH, 0.75);
+
+			String bpFont = "BPAMMO00";
+			if (bp == 1) bpFont = "BPAMMO01";
+			else if (bp == 2) bpFont = "BPAMMO02";
+			else if (bp == 3) bpFont = "BPAMMO03";
+			else if (bp == 4) bpFont = "BPAMMO04";
+			else if (bp >= 5) bpFont = "BPAMMO05";
+			DrawIcon(bpFont, cx, cy, virtW, virtH, 0.85);
+			return;
+		}
+
+		if (style == 2)
+		{
+			DrawIcon(crucibleAmmo == 0 ? "CRUCRY00" : "CRUCRY01", cx, cy, virtW, virtH, 0.85);
+
+			String crFont = "Blank";
+			if (crucibleAmmo == 1) crFont = "CRUCAM01";
+			else if (crucibleAmmo == 2) crFont = "CRUCAM02";
+			else if (crucibleAmmo >= 3) crFont = "CRUCAM03";
+			DrawIcon(crFont, cx + 21, cy, virtW, virtH, 0.85);
+
+			String bpFont = "BPAMMO10";
+			if (bp == 2) bpFont = "BPAMMO11";
+			else if (bp == 3) bpFont = "BPAMMO12";
+			else if (bp == 4) bpFont = "BPAMMO13";
+			else if (bp >= 5) bpFont = "BPAMMO14";
+			DrawIcon(bpFont, cx + 43, cy, virtW, virtH, 0.85);
+
+			DrawIcon(fbReady ? "SCFLM01" : "SCFLM00", cx + 83, cy, virtW, virtH, 0.85);
+			DrawIcon(ibReady ? "SCICB01" : "SCICB00", cx + 123, cy, virtW, virtH, 0.85);
+		}
+	}
+}

@@ -1,0 +1,18 @@
+// Reserved controller slot for future BP extensions; charge/anim live on PB_WeaponBase::BloodPunch.
+class GK_BloodPunchController : CustomInventory
+{
+	Default
+	{
+		+INVENTORY.UNDROPPABLE
+		+INVENTORY.UNTOSSABLE
+		+INVENTORY.PERSISTENTPOWER
+		Inventory.MaxAmount 1;
+	}
+
+	States
+	{
+	Use:
+		TNT1 A 0;
+		Fail;
+	}
+}

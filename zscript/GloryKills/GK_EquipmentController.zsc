@@ -1,0 +1,326 @@
+// Equipment Launcher controller — weapon-independent PSprite overlays + cooldowns.
+class GK_EquipmentController : CustomInventory
+{
+	const EL_LAYER_FLAME = -51;
+	const EL_LAYER_ICE = -69;
+
+	int fbCooldownSec;
+	int ibCooldownSec;
+	bool fbReady;
+	bool ibReady;
+	bool busy;
+
+	Default
+	{
+		+INVENTORY.UNDROPPABLE
+		+INVENTORY.UNTOSSABLE
+		+INVENTORY.PERSISTENTPOWER
+		Inventory.MaxAmount 1;
+	}
+
+	override void AttachToOwner(Actor other)
+	{
+		super.AttachToOwner(other);
+		InitReady();
+	}
+
+	void InitReady()
+	{
+		fbReady = true;
+		ibReady = true;
+		fbCooldownSec = 0;
+		ibCooldownSec = 0;
+		busy = false;
+		SyncReadyTokens();
+	}
+
+	void EnsureReady()
+	{
+		if (fbCooldownSec <= 0) fbReady = true;
+		if (ibCooldownSec <= 0) ibReady = true;
+		SyncReadyTokens();
+	}
+
+	void SyncReadyTokens()
+	{
+		if (!owner) return;
+
+		if (fbReady)
+		{
+			if (owner.CountInv("FlameBelchReady") < 1)
+				owner.A_GiveInventory("FlameBelchReady", 1);
+		}
+		else if (owner.CountInv("FlameBelchReady") > 0)
+		{
+			owner.A_TakeInventory("FlameBelchReady", 1);
+		}
+
+		if (ibReady)
+		{
+			if (owner.CountInv("IceBombReady") < 1)
+				owner.A_GiveInventory("IceBombReady", 1);
+		}
+		else if (owner.CountInv("IceBombReady") > 0)
+		{
+			owner.A_TakeInventory("IceBombReady", 1);
+		}
+	}
+
+	bool RequestFlameBelch()
+	{
+		EnsureReady();
+		if (!GK_CombatUtil.CanActivate(owner, busy))
+		{
+			PlayNotReady();
+			return false;
+		}
+		if (!fbReady || owner.CountInv("FlameBelchReady") < 1)
+		{
+			PlayNotReady();
+			return false;
+		}
+		if (UseELAmmo() && owner.CountInv("PB_Fuel") < 50)
+		{
+			PlayNotReady();
+			return false;
+		}
+		GK_CombatUtil.ClearADS(owner);
+		if (UseELAmmo())
+		{
+			owner.A_TakeInventory("PB_Fuel", 50);
+		}
+		if (GetCVarBool("be_FBperformance"))
+		{
+			if (!StartOverlay(EL_LAYER_FLAME, "FireFlameBelchSimple"))
+			{
+				PlayNotReady();
+				return false;
+			}
+			return true;
+		}
+		if (!StartOverlay(EL_LAYER_FLAME, "FireFlameBelch"))
+		{
+			PlayNotReady();
+			return false;
+		}
+		return true;
+	}
+
+	bool RequestIceBomb()
+	{
+		EnsureReady();
+		if (!GK_CombatUtil.CanActivate(owner, busy))
+		{
+			PlayNotReady();
+			return false;
+		}
+		if (!ibReady || owner.CountInv("IceBombReady") < 1)
+		{
+			PlayNotReady();
+			return false;
+		}
+		if (UseELAmmo() && owner.CountInv("PB_RocketAmmo") < 1)
+		{
+			PlayNotReady();
+			return false;
+		}
+		GK_CombatUtil.ClearADS(owner);
+		if (UseELAmmo())
+		{
+			owner.A_TakeInventory("PB_RocketAmmo", 1);
+		}
+		if (!StartOverlay(EL_LAYER_ICE, "FireIceBomb"))
+		{
+			PlayNotReady();
+			return false;
+		}
+		return true;
+	}
+
+	override void DoEffect()
+	{
+		super.DoEffect();
+		if (!owner || !owner.player || owner.health <= 0) return;
+		TickCooldowns();
+	}
+
+	clearscope bool CanActivate() const
+	{
+		if (!owner || owner.health <= 0) return false;
+		if (busy) return false;
+		if (owner.CountInv("CantDoAction") > 0) return false;
+
+		let plr = owner.player;
+		if (!plr) return false;
+
+		let weap = plr.ReadyWeapon;
+		let pbWeap = PB_WeaponBase(weap);
+		if (pbWeap && pbWeap.executingEnemy) return false;
+
+		return true;
+	}
+
+	bool StartOverlay(int layer, StateLabel stateLabel)
+	{
+		if (!owner || !owner.player)
+		{
+			busy = false;
+			return false;
+		}
+		if (owner.player.FindPSprite(layer))
+		{
+			busy = false;
+			PlayNotReady();
+			return false;
+		}
+
+		busy = true;
+		let psp = owner.player.GetPSprite(layer);
+		psp.caller = self;
+		psp.bAddBob = false;
+		psp.bAddWeapon = false;
+		psp.SetState(FindState(stateLabel));
+		return true;
+	}
+
+	void PlayNotReady()
+	{
+		owner.A_StartSound("Equip_notready", CHAN_ITEM);
+	}
+
+	void BeginCooldownFlame()
+	{
+		fbReady = false;
+		fbCooldownSec = max(1, GetCVarInt("sv_Flamebelch_Cool"));
+		owner.A_TakeInventory("FlameBelchReady", 1);
+	}
+
+	void BeginCooldownIce()
+	{
+		ibReady = false;
+		ibCooldownSec = max(1, GetCVarInt("sv_Icebomb_Cool"));
+		owner.A_TakeInventory("IceBombReady", 1);
+	}
+
+	void TickCooldowns()
+	{
+		if (level.time % 35 != 0) return;
+
+		if (!fbReady && fbCooldownSec > 0)
+		{
+			fbCooldownSec--;
+			if (fbCooldownSec <= 0)
+			{
+				fbReady = true;
+				owner.A_GiveInventory("FlameBelchReady", 1);
+				owner.A_StartSound("Equip_flameready", CHAN_ITEM, CHANF_LOCAL);
+			}
+		}
+
+		if (!ibReady && ibCooldownSec > 0)
+		{
+			ibCooldownSec--;
+			if (ibCooldownSec <= 0)
+			{
+				ibReady = true;
+				owner.A_GiveInventory("IceBombReady", 1);
+				owner.A_StartSound("Equip_Iceready", CHAN_ITEM, CHANF_LOCAL);
+			}
+		}
+	}
+
+	clearscope bool UseELAmmo() const
+	{
+		let cvar = CVar.GetCVar("be_UseELammo");
+		return cvar ? cvar.GetBool() : true;
+	}
+
+	clearscope bool GetCVarBool(string cvarName) const
+	{
+		let cvar = CVar.GetCVar(cvarName);
+		return cvar ? cvar.GetBool() : false;
+	}
+
+	clearscope int GetCVarInt(string cvarName) const
+	{
+		let cvar = CVar.GetCVar(cvarName);
+		return cvar ? cvar.GetInt() : 0;
+	}
+
+	States
+	{
+	Use:
+		TNT1 A 0;
+		Fail;
+
+	FireFlameBelch:
+		TNT1 A 0 A_OverlayOffset(EL_LAYER_FLAME, 0, WEAPONTOP);
+		SCL0 ABCD 1 A_StartSound("Equip_Activate", CHAN_ITEM);
+		SCL0 EFGHIJ 1;
+		SCL0 K 1 A_Quake(8, 8, 0, 32);
+		TNT1 A 0 A_Recoil(4);
+		TNT1 A 0 A_StartSound("Flamebelch", CHAN_ITEM);
+		SCF0 A 5 bright A_GunFlash;
+		TNT1 A 0 A_AlertMonsters;
+		TNT1 A 0
+		{
+			let ctrl = GK_EquipmentController(invoker);
+			ctrl.BeginCooldownFlame();
+			ctrl.busy = false;
+		}
+		SCF0 BCDBCDBCD 1 bright
+		{
+			A_FireProjectile("SCFireMissile", -3, 0, Random(-25, -20), 12, FPF_NOAUTOAIM, 0);
+		}
+		SCF0 EF 1;
+		SCL0 KJIHGFEDCBA 1;
+		Stop;
+
+	FireFlameBelchSimple:
+		TNT1 A 0 A_OverlayOffset(EL_LAYER_FLAME, 0, WEAPONTOP);
+		SCL0 ABCD 1 A_StartSound("Equip_Activate", CHAN_ITEM);
+		SCL0 EFGHIJ 1;
+		SCL0 K 1 A_Quake(8, 8, 0, 32);
+		TNT1 A 0 A_Recoil(4);
+		TNT1 A 0 A_StartSound("Flamebelch", CHAN_ITEM);
+		SCF0 A 5 bright A_GunFlash;
+		TNT1 A 0 A_AlertMonsters;
+		TNT1 A 0
+		{
+			let ctrl = GK_EquipmentController(invoker);
+			ctrl.BeginCooldownFlame();
+			ctrl.busy = false;
+		}
+		SCF0 BCDBCDBCD 1 bright
+		{
+			A_FireProjectile("SCFireMissileSimple", -3, 0, Random(-25, -20), 12, FPF_NOAUTOAIM, 0);
+		}
+		SCF0 EF 1;
+		SCL0 KJIHGFEDCBA 1;
+		Stop;
+
+	FireIceBomb:
+		TNT1 A 0 A_OverlayOffset(EL_LAYER_ICE, 0, WEAPONTOP);
+		LCL0 ABCD 1 A_StartSound("Equip_Activate", CHAN_ITEM);
+		LCL0 EFGHIJ 1;
+		LCL0 K 1 A_Quake(8, 8, 0, 32);
+		TNT1 A 0 A_Recoil(4);
+		LCF0 A 3 bright A_GunFlash;
+		TNT1 A 0 A_AlertMonsters;
+		TNT1 A 0
+		{
+			let ctrl = GK_EquipmentController(invoker);
+			ctrl.BeginCooldownIce();
+			ctrl.busy = false;
+		}
+		LCF0 BC 1 bright;
+		LCFG D 1 bright
+		{
+			A_StartSound("weapons/firegrenade", CHAN_ITEM);
+			A_FireProjectile("SC_CryoGrenade", 1, 0, Random(22, 18), 12, FPF_NOAUTOAIM, 0);
+		}
+		LCF0 EF 1;
+		LCL0 KJIHGFEDCBA 1;
+		Stop;
+	}
+}

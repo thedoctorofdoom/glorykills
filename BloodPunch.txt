@@ -1,4 +1,5 @@
 Actor BPtoken : Inventory {inventory.maxamount 5}
+Actor BloodPunchBusy : Inventory {inventory.maxamount 1}
 Actor BloodPunchKilled : Inventory {inventory.maxamount 1}
 Actor BloodPunchAttacked : Inventory {inventory.maxamount 1}
 

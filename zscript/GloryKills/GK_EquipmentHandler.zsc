@@ -1,6 +1,87 @@
 class GK_EquipmentHandler : EventHandler
 {
-	bool prevGloryMelee[MAXPLAYERS];
+	bool bpAlerted[MAXPLAYERS];
+	bool lowHP[MAXPLAYERS];
+	bool lowArmor[MAXPLAYERS];
+	bool armorEquipped[MAXPLAYERS];
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		let cvar = CVar.GetCVar("isGKLoaded");
+		if (cvar) cvar.SetBool(true);
+	}
+
+	override void PlayerEntered(PlayerEvent e)
+	{
+		GrantGKToPlayer(e.PlayerNumber);
+		bpAlerted[e.PlayerNumber] = false;
+		lowHP[e.PlayerNumber] = false;
+		lowArmor[e.PlayerNumber] = false;
+		armorEquipped[e.PlayerNumber] = false;
+	}
+
+	override void PlayerSpawned(PlayerEvent e)
+	{
+		GrantGKToPlayer(e.PlayerNumber);
+	}
+
+	override void PlayerRespawned(PlayerEvent e)
+	{
+		GrantGKToPlayer(e.PlayerNumber);
+		bpAlerted[e.PlayerNumber] = false;
+		lowHP[e.PlayerNumber] = false;
+		lowArmor[e.PlayerNumber] = false;
+	}
+
+	void GrantGKToPlayer(int pnum)
+	{
+		if (pnum < 0 || pnum >= MAXPLAYERS) return;
+
+		let pmo = players[pnum].mo;
+		if (!pmo) return;
+
+		let eq = EnsureEquipmentController(pnum);
+		if (eq) eq.EnsureReady();
+		EnsureCrucibleController(pnum);
+		EnsureBloodPunchController(pnum);
+	}
+
+	override void NetworkProcess(ConsoleEvent e)
+	{
+		int pnum = e.Player;
+		if (pnum < 0 || pnum >= MAXPLAYERS)
+			pnum = consoleplayer;
+		if (pnum < 0 || pnum >= MAXPLAYERS || !playeringame[pnum]) return;
+
+		let pmo = players[pnum].mo;
+		if (!pmo) return;
+
+		if (e.Name == "gk_crucible_on")
+		{
+			pmo.GiveInventory("DoGloryMelee", 1);
+			let ctrl = EnsureCrucibleController(pnum);
+			if (ctrl) ctrl.RequestCrucible();
+			return;
+		}
+		if (e.Name == "gk_crucible_off")
+		{
+			pmo.TakeInventory("DoGloryMelee", 1);
+			return;
+		}
+
+		let eq = EnsureEquipmentController(pnum);
+		if (eq) eq.EnsureReady();
+		if (!eq) return;
+
+		if (e.Name == "gk_flamebelch")
+		{
+			eq.RequestFlameBelch();
+		}
+		else if (e.Name == "gk_icebomb")
+		{
+			eq.RequestIceBomb();
+		}
+	}
 
 	override void WorldTick()
 	{
@@ -11,44 +92,124 @@ class GK_EquipmentHandler : EventHandler
 			let pmo = players[i].mo;
 			if (pmo == null || pmo.health <= 0) continue;
 
-			let weap = players[i].ReadyWeapon;
-			if (weap == null) continue;
+			if (!pmo.FindInventory("GK_EquipmentController"))
+				GrantGKToPlayer(i);
 
-			bool hasGloryMelee = pmo.CountInv("DoGloryMelee") > 0;
+			TickBloodPunchReady(i, pmo);
+			TickLowHealthAlert(i, pmo);
+			TickLowArmorAlert(i, pmo);
+		}
+	}
 
-			if (pmo.CountInv("CantDoAction") > 0)
+	void TickBloodPunchReady(int pnum, Actor pmo)
+	{
+		bool ready = pmo.CountInv("BPtoken") == 5;
+		if (ready && !bpAlerted[pnum])
+		{
+			pmo.A_StartSound("BpunchReady", CHAN_AUTO, CHANF_LOCAL);
+			bpAlerted[pnum] = true;
+		}
+		else if (!ready)
+		{
+			bpAlerted[pnum] = false;
+		}
+	}
+
+	void TickLowHealthAlert(int pnum, Actor pmo)
+	{
+		let cvar = CVar.GetCVar("be_LowHealthAlert");
+		if (!cvar || !cvar.GetBool()) return;
+
+		let threshold = CVar.GetCVar("sv_LowHealthValue");
+		int limit = threshold ? threshold.GetInt() : 30;
+
+		if (pmo.health <= limit)
+		{
+			if (!lowHP[pnum])
 			{
-				prevGloryMelee[i] = hasGloryMelee;
-				continue;
-			}
-
-			let pbWeap = PB_WeaponBase(weap);
-			if (pbWeap && pbWeap.executingEnemy)
-			{
-				prevGloryMelee[i] = hasGloryMelee;
-				continue;
-			}
-
-			if (hasGloryMelee && !prevGloryMelee[i])
-			{
-				State st = weap.FindState("GloryMelee");
-				if (st)
-				{
-					players[i].SetPSprite(PSP_WEAPON, st);
-				}
-			}
-			prevGloryMelee[i] = hasGloryMelee;
-
-			if (pmo.CountInv("DoShoulderCannon") > 0)
-			{
-				pmo.TakeInventory("DoShoulderCannon", 1);
-
-				State st = weap.FindState("FireShoulderCannon");
-				if (st)
-				{
-					players[i].SetPSprite(PSP_WEAPON, st);
-				}
+				pmo.A_StartSound("LOWHEALTH", CHAN_AUTO, CHANF_LOCAL);
+				lowHP[pnum] = true;
 			}
 		}
+		else
+		{
+			lowHP[pnum] = false;
+		}
+	}
+
+	void TickLowArmorAlert(int pnum, Actor pmo)
+	{
+		let cvar = CVar.GetCVar("be_LowArmorAlert");
+		if (!cvar || !cvar.GetBool()) return;
+
+		let threshold = CVar.GetCVar("sv_LowArmorValue");
+		int limit = threshold ? threshold.GetInt() : 25;
+
+		int armor = pmo.CountInv("Armor");
+		if (armor > limit)
+		{
+			armorEquipped[pnum] = true;
+		}
+
+		if (armor <= limit)
+		{
+			if (!lowArmor[pnum] && armorEquipped[pnum])
+			{
+				pmo.A_StartSound("LOWARMOR", CHAN_AUTO, CHANF_LOCAL);
+				lowArmor[pnum] = true;
+				armorEquipped[pnum] = false;
+			}
+		}
+		else
+		{
+			lowArmor[pnum] = false;
+		}
+	}
+
+	GK_EquipmentController EnsureEquipmentController(int pnum)
+	{
+		let pmo = players[pnum].mo;
+		if (!pmo) return null;
+
+		let ctrl = GK_EquipmentController(pmo.FindInventory("GK_EquipmentController"));
+		if (!ctrl)
+		{
+			pmo.GiveInventory("GK_EquipmentController", 1);
+			ctrl = GK_EquipmentController(pmo.FindInventory("GK_EquipmentController"));
+			if (ctrl) ctrl.InitReady();
+		}
+		else
+		{
+			ctrl.EnsureReady();
+		}
+		return ctrl;
+	}
+
+	GK_CrucibleController EnsureCrucibleController(int pnum)
+	{
+		let pmo = players[pnum].mo;
+		if (!pmo) return null;
+
+		let ctrl = GK_CrucibleController(pmo.FindInventory("GK_CrucibleController"));
+		if (!ctrl)
+		{
+			pmo.GiveInventory("GK_CrucibleController", 1);
+			ctrl = GK_CrucibleController(pmo.FindInventory("GK_CrucibleController"));
+		}
+		return ctrl;
+	}
+
+	GK_BloodPunchController EnsureBloodPunchController(int pnum)
+	{
+		let pmo = players[pnum].mo;
+		if (!pmo) return null;
+
+		let ctrl = GK_BloodPunchController(pmo.FindInventory("GK_BloodPunchController"));
+		if (!ctrl)
+		{
+			pmo.GiveInventory("GK_BloodPunchController", 1);
+			ctrl = GK_BloodPunchController(pmo.FindInventory("GK_BloodPunchController"));
+		}
+		return ctrl;
 	}
 }

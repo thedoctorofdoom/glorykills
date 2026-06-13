@@ -3,8 +3,8 @@ addmenukey "Crucible" +glorysaw
 addmenukey "Flame Belch" shouldercannon
 addmenukey "Ice Bomb" shouldercannonswitch
 
-alias +glorysaw "puke 6000"
-alias -glorysaw "puke 6001"
+alias +glorysaw "netevent gk_crucible_on"
+alias -glorysaw "netevent gk_crucible_off"
 
-alias shouldercannon "puke 6003"
-alias shouldercannonswitch "puke 6005"
+alias shouldercannon "netevent gk_flamebelch"
+alias shouldercannonswitch "netevent gk_icebomb"

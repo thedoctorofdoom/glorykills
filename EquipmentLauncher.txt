@@ -1,12 +1,5 @@
-Actor DoFlameBelch : Inventory {Inventory.MaxAmount 1}
-Actor DoIceBomb : Inventory {Inventory.MaxAmount 1}
-
-Actor CoolFlameBelch : Inventory {Inventory.MaxAmount 60}
-Actor CoolIceBomb : Inventory {Inventory.MaxAmount 60}
-
 Actor FlameBelchReady : Inventory {Inventory.MaxAmount 1}
 Actor IceBombReady : Inventory {Inventory.MaxAmount 1}
-Actor DoShoulderCannon : Inventory {Inventory.MaxAmount 1}
 
 Actor SC_CryoGrenade : PB_FragGrenade
 {

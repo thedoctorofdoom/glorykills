@@ -1,0 +1,24 @@
+class GK_CombatUtil
+{
+	play static bool CanActivate(Actor mo, bool busy)
+	{
+		if (!mo || mo.health <= 0) return false;
+		if (busy) return false;
+		if (mo.CountInv("CantDoAction") > 0) return false;
+
+		let plr = mo.player;
+		if (!plr) return false;
+
+		let weap = plr.ReadyWeapon;
+		let pbWeap = PB_WeaponBase(weap);
+		if (pbWeap && pbWeap.executingEnemy) return false;
+
+		return true;
+	}
+
+	play static void ClearADS(Actor mo)
+	{
+		mo.A_TakeInventory("Zoomed", 1);
+		mo.A_TakeInventory("ADSmode", 1);
+	}
+}

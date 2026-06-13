@@ -1,0 +1,10 @@
+class GK_HUDHandler : StaticEventHandler
+{
+	override void RenderOverlay(RenderEvent e)
+	{
+		if (playeringame[consoleplayer])
+		{
+			GK_HUD.RenderGloryHUD(PlayerPawn(players[consoleplayer].mo));
+		}
+	}
+}

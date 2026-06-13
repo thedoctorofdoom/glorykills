@@ -58,9 +58,9 @@ DECORATE                         ZSCRIPT.zc (Version "4.14.0")
 ├── HardSettings.txt             ├── zscript/Monsters/Commando.zc
 ├── Monsters/T1-Grunts.txt       ├── zscript/Monsters/HelmetCommando.zc
 ├── Monsters/T1-Imps.txt         ├── zscript/Monsters/Mancubus.zc
-├── Monsters/T2-Pinkies.txt      ├── zscript/GloryKills/GK_EquipmentHandler.zsc
-├── Monsters/T3-Arachnos.txt     └── zscript/AmmoBonus.zsc
-├── Monsters/T3-Fats.txt
+├── Monsters/T2-Pinkies.txt      ├── zscript/GloryKills/BaseWeapon_Glorykill.zsc
+├── Monsters/T3-Arachnos.txt     ├── zscript/GloryKills/GK_EquipmentHandler.zsc
+├── Monsters/T3-Fats.txt         └── zscript/AmmoBonus.zsc
 ├── Monsters/T3-Floaters.txt
 ├── Monsters/T3-Revies.txt
 ├── Monsters/T4-Nobles.txt
@@ -68,7 +68,7 @@ DECORATE                         ZSCRIPT.zc (Version "4.14.0")
 └── Monsters/Tz-Bosses.txt
 ```
 
-> The weapon extension files are daisy-chained: `zscript/Weapons/BaseWeapon_Melee.zsc` includes `zscript/GloryKills/BaseWeapon_Glorykill.zsc` at line 1. `BaseWeapon_Melee.zsc` is NOT included by `ZSCRIPT.zc` — it overrides PB's own `BaseWeapon_Melee.zsc` via the VFS and is loaded by PB's include chain. `BaseWeapon_Functions.zsc` was **deleted** — PB's own version is loaded from PB's archive. `GK_EquipmentHandler.zsc` IS directly included by `ZSCRIPT.zc`.
+> **UZDoom 4.14+ constraint:** `extend class PB_WeaponBase` weapon states must compile inside PB Staging's translation unit — they cannot live in this addon's `ZSCRIPT.zc` alone. Integration uses a **thin VFS hook** at `zscript/Weapons/BaseWeapon_Melee.zsc` (two `#Include` lines) that pulls in `BaseWeapon_Glorykill.zsc` plus an unmodified PB snapshot (`BaseWeapon_Melee.upstream.zsc`). When PB Staging updates melee, refresh only the upstream snapshot via `tools/sync_pb_melee_upstream.ps1`; GK logic stays in `BaseWeapon_Glorykill.zsc`. Downstream packs that replace `BaseWeapon_Melee.zsc` must `#Include "zscript/GloryKills/BaseWeapon_Glorykill.zsc"` in their override (see Compatibility Notes).
 
 ---
 
@@ -94,10 +94,10 @@ DECORATE                         ZSCRIPT.zc (Version "4.14.0")
 
 | File | Role |
 |------|------|
-| `GloryKills/BaseWeapon_Glorykill.zsc` | `extend class PB_WeaponBase` — glory kill execution logic (`PB_ExecuteGK()`), Crucible weapon states, Blood Punch states, Equipment Launcher states (Flame Belch / Ice Bomb), QuickMelee override |
+| `GloryKills/BaseWeapon_Glorykill.zsc` | `extend class PB_WeaponBase` — GK weapon states, `QuickMeleeGK`, etc. Included via thin VFS hook `Weapons/BaseWeapon_Melee.zsc`, **not** `ZSCRIPT.zc` |
+| `Weapons/BaseWeapon_Melee.zsc` | **Thin VFS hook** (2 lines): includes `BaseWeapon_Glorykill.zsc` + `BaseWeapon_Melee.upstream.zsc` into PB's translation unit |
+| `Weapons/BaseWeapon_Melee.upstream.zsc` | Unmodified PB Staging melee snapshot; refresh with `tools/sync_pb_melee_upstream.ps1` when PB updates |
 | `GloryKills/GK_EquipmentHandler.zsc` | `EventHandler` — routes inventory token signals to weapon states each tick. Uses a `bool[] prevGloryMelee` array for rising-edge detection of `DoGloryMelee` (Crucible key press) and routes to `GloryMelee` state; detects `DoShoulderCannon` and routes to `FireShoulderCannon`. Guard checks: skips if player is dead (`health <= 0`), has `CantDoAction`, or weapon's `executingEnemy` is true |
-| `Weapons/BaseWeapon_Melee.zsc` | `extend class PB_WeaponBase` — melee combat system: knife attacks, kicks (standard/air/slide/drop), barrel interactions, bloody knife overlays. Includes `GloryKills/BaseWeapon_Glorykill.zsc`. Overrides PB's own `BaseWeapon_Melee.zsc` via VFS |
-| `Weapons/BaseWeapon_Functions.zsc` | **DELETED** — was a stale copy of PB's own file; shipping it in the addon overrode PB's updated version via the VFS, breaking PB features. PB's own version is loaded from PB's archive. Do NOT re-add this file. |
 | `Monsters/*.zc` | Monster GK replacement classes (see Monster Pattern below) |
 | `Monsters/Unused/` | Unused/WIP monster definitions (PinkyDemon, PB_Elemental) |
 | `AmmoBonus.zsc` | ZScript inventory classes for ammo bonus pickups (Cartridge, Clip, Shell, Rocket, Cell, Grenade, Gas, StunGrenade) using `TryPickup` override |
@@ -310,7 +310,11 @@ Custom damage types that trigger specific death states on GK monsters:
 
 ### Modifying Weapon Behavior
 
-All weapon extensions are in `zscript/Weapons/` using `extend class PB_WeaponBase`. The state labels `QuickMelee`, `PerformExecution`, `GloryMelee`, `BloodPunch`, `Crucible`, `FireShoulderCannon` are the key entry points. Weapon states flow back to `GoingToReady` / `GoingToReady2` to return to normal weapon operation.
+All GK weapon states live in `zscript/GloryKills/BaseWeapon_Glorykill.zsc`. They compile through the thin VFS hook `zscript/Weapons/BaseWeapon_Melee.zsc`. Key state labels: `QuickMelee`, `QuickMeleeGK`, `PerformExecution`, `GloryMelee`, `BloodPunch`, `Crucible`, `FireShoulderCannon`. PB melee/kick/barrel states live in `BaseWeapon_Melee.upstream.zsc`.
+
+**Do not merge GK edits into `BaseWeapon_Melee.upstream.zsc`.** When PB Staging updates melee, re-run `tools/sync_pb_melee_upstream.ps1` instead.
+
+**Do not ship full copies of other PB `BaseWeapon_*.zsc` files** (e.g. `BaseWeapon_Functions.zsc`).
 
 ### Adding New CVars
 
@@ -326,21 +330,46 @@ Scripts 6000-6005 are used. Avoid conflicts with PB's own ACS scripts. The alias
 
 ## Compatibility Notes
 
-This add-on targets **PB 0.4.1A (master branch)**. It was originally developed against PB_Staging and ported to the public release. Key compatibility points:
+This add-on targets **PB 0.4.1A / PB_Staging (master branch)**. Key compatibility points:
 
-- `PB_WeaponBase` and all helper functions (`PB_Execute`, `PB_SetUsingMelee`, `PB_SetPlayerExecutionProperties`, `PB_SetReloading`, etc.) are present and compatible in 0.4.1A
-- `PB_FragGrenade` (now a ZScript class in PB's `SuperGL.zs`) remains compatible as a parent for `SC_CryoGrenade`
-- `FlamethrowerMissileNew` (in PB's `FlamerStuff.zsc`) remains compatible as a parent for `SCFireMissile`
-- `PB_Fuel`, `PB_RocketAmmo` ammo classes are present in 0.4.1A
-- The VFS override mechanism (addon's `BaseWeapon_Melee.zsc` replaces PB's version) works correctly with PB 0.4.1A's include chain
-- `BaseWeapon_Functions.zsc` must **not** be shipped — PB 0.4.1A's own version is loaded from PB's archive. Overriding it broke PB features.
+- `PB_WeaponBase` and all helper functions (`PB_Execute`, `PB_SetUsingMelee`, `PB_SetPlayerExecutionProperties`, `PB_SetReloading`, etc.) are provided by PB Staging
+- `PB_FragGrenade`, `FlamethrowerMissileNew`, `PB_Fuel`, `PB_RocketAmmo` remain compatible as parent/ammo classes
+- **Thin VFS hook only** — `BaseWeapon_Melee.zsc` is two includes; PB melee is an upstream snapshot, not a hand-edited fork
+- **Load order:** load GloryKills immediately after PB Staging. Mods loaded later that replace `BaseWeapon_Melee.zsc` must `#Include "zscript/GloryKills/BaseWeapon_Glorykill.zsc"` in their override and branch to `QuickMeleeGK` when `isGKLoaded` is set
+
+### Downstream weapon-pack integration
+
+If your addon replaces PB's `BaseWeapon_Melee.zsc` (e.g. PBWP), include GK in **your** override so it compiles in PB's translation unit:
+
+```zscript
+#Include "zscript/GloryKills/BaseWeapon_Glorykill.zsc"
+// ... your melee system ...
+```
+
+Early in your `QuickMelee` handler (PBWP uses the `isGKLoaded` server CVAR set at map load):
+
+```zscript
+TNT1 A 0 A_JumpIf(GetCvar("isGKLoaded"), "QuickMeleeGK");
+```
+
+GloryKills defines `QuickMeleeGK` and all GK weapon states (`PerformExecution`, `GloryMelee`, `BloodPunch`, `Crucible`, `FireShoulderCannon`, equipment overlays). Your pack keeps owning melee/kick/barrel logic; GK keeps owning execution routing.
+
+States this addon provides for downstream `FindState()` / `SetPSprite()` use:
+
+| State | Purpose |
+|-------|---------|
+| `QuickMeleeGK` | FinisherToken / Blood Punch / PB_Execute fallback, then `GoMeleeInstead` |
+| `PerformExecution` | Glory kill melee entry |
+| `GloryMelee` | Crucible key (also routed by `GK_EquipmentHandler`) |
+| `BloodPunch` | Charged melee |
+| `Crucible` | Energy sword |
+| `FireShoulderCannon` | Equipment launcher (also routed by `GK_EquipmentHandler`) |
 
 ---
 
 ## Known Issues and Quirks
 
-- `BaseWeapon_Melee.zsc` contains test actors at the bottom (`GayImp1`-`GayImp4` with 10000 health and colored blood) — these are debug/test classes
-- `BaseWeapon_Functions.zsc` was deleted — it was a stale copy of PB's own file that overrode PB's updated version via the VFS when loaded after PB. Never ship unmodified PB files in the addon; they will silently replace PB's versions and cause breakage when PB updates
+- **Never ship VFS overrides of PB `BaseWeapon_*.zsc`** — stale copies broke PB features when Staging updated; GK now extends weapons only from `ZSCRIPT.zc`
 - `EquipmentLanucher.acs` has a typo in the filename ("Lanucher" vs "Launcher")
 - Backup files exist in `Monsters/` (`*_Backup.txt`) — these are not included by `DECORATE` and should be ignored
 - Unused monster definitions exist in `zscript/Monsters/Unused/`

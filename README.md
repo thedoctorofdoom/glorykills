@@ -18,13 +18,19 @@ A **Doom Eternal**-inspired add-on for [Project Brutality](https://github.com/pa
 ## Installation
 
 1. Download or clone this repository
-2. Load it **after** Project Brutality in your source port:
+2. Load it **immediately after** Project Brutality / PB Staging, **before** weapon packs that override PB base weapon files:
 
 ```
-uzdoom -file ProjectBrutality.pk3 GloryKills
+-file Project_Brutality-PB_Staging.zip
+-file glorykills-master.zip
+-file PBMonsterPackStagingGKVersion.pk3
+-file PBX-Weapons-main.zip
+-file PBWP.zip
 ```
 
-Or drag and drop both onto your UZDoom executable, with GloryKills loaded second.
+GloryKills uses a thin VFS hook (`BaseWeapon_Melee.zsc` → GK + PB upstream snapshot) so weapon states compile in PB's translation unit (required by UZDoom 4.14+). When PB Staging updates, run `tools/sync_pb_melee_upstream.ps1` to refresh the melee snapshot — GK logic in `BaseWeapon_Glorykill.zsc` stays separate. Weapon packs loaded later must include that GK file in their own `BaseWeapon_Melee` override.
+
+Or drag and drop onto UZDoom with GloryKills loaded second.
 
 ## Controls
 

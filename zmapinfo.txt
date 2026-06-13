@@ -1,4 +1,4 @@
 GameInfo
 {
-	AddEventHandlers = "GK_EquipmentHandler"
+	AddEventHandlers = "GK_EquipmentHandler", "GK_HUDHandler"
 }
