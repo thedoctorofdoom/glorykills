@@ -1,7 +1,8 @@
 extend class PB_WeaponBase
 {
-    action void PB_ExecuteGK() {
-		if(CountInv("GrabbedBarrel") >= 1 || CountInv("GrabbedFlameBarrel") >= 1 || CountInv("GrabbedIceBarrel") >= 1) { return; }
+    action state PB_ExecuteGK() {
+		if(CountInv("GrabbedBarrel") >= 1 || CountInv("GrabbedFlameBarrel") >= 1 || CountInv("GrabbedIceBarrel") >= 1)
+			return resolveState(null);
 	
 //         CVar experimental_settings = CVar.FindCVar('pb_experimental');
 		
@@ -66,7 +67,7 @@ extend class PB_WeaponBase
 				}
 // 			}
 		}
-		//return null;
+		return resolveState(null);
 	}
     
     states
@@ -85,7 +86,7 @@ extend class PB_WeaponBase
 					A_Giveinventory("Fear",1);
 				}
 			}
-			#### AAA 0 PB_ExecuteGK(); // Check if monster can be executed, jump to execution handler instead
+			#### AAA 0 return PB_ExecuteGK(); // Check if monster can be executed, jump to execution handler instead
 			TNT1 A 0;
 			Goto GoingToReady;
 		
@@ -472,7 +473,7 @@ extend class PB_WeaponBase
 // 				return ResolveState(null);
 // 			}
 			#### AAA 0 {
-				if(!be_ExecutionsON) {PB_Execute();}
+				if(!be_ExecutionsON) return PB_Execute();
 				return resolveState(null);
 			}
             goto GoMeleeInstead;

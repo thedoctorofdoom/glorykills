@@ -1,5 +1,8 @@
 //CREDITS TO D4D, sorry guys :(
 
+// PB Staging renamed the autoshotgun grunt to PB_ASGGuy; keep legacy name for old spawner strings.
+ACTOR ASGGuy : PB_ASGGuy { }
+
 Actor PainSoundToken : Inventory
 { }
 

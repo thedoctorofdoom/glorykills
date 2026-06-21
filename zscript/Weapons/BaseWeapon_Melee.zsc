@@ -72,16 +72,16 @@ extend class PB_WeaponBase
 			}
 			MC3S AB 1 {
 				
-				if(JustPressed(BT_USER2)) PB_Execute();
+				if(JustPressed(BT_USER2)) return PB_Execute();
 			}
 			MC3S C 1 {
 				A_Setangle(angle - 1,SPF_INTERPOLATE);
 				A_SetPitch(pitch + 1,SPF_INTERPOLATE);
-				if(JustPressed(BT_USER2)) PB_Execute();
+				if(JustPressed(BT_USER2)) return PB_Execute();
 			}
 			MC3S D 1 {
 				A_QuakeEx(0,0.5,0,7,0,10,"",QF_SCALEDOWN|QF_RELATIVE,0,0,0,0,0,2,2);
-				if(JustPressed(BT_USER2)) PB_Execute();
+				if(JustPressed(BT_USER2)) return PB_Execute();
 			}
 			TNT1 A 0 {
 				if(CountInv("PB_PowerStrength") == 1) A_FireProjectile("SuperKnifeSwing",0,0,0,0,0,0);
@@ -106,15 +106,15 @@ extend class PB_WeaponBase
 				}
 			}
 			MC3S EF 1 {
-				if(JustPressed(BT_USER2)) PB_Execute();
+				if(JustPressed(BT_USER2)) return PB_Execute();
 			}
 			MC3S GHIJK 1 {
 				A_SetPitch(pitch - 0.2,SPF_INTERPOLATE);
-				if(JustPressed(BT_USER2)) PB_Execute();
+				if(JustPressed(BT_USER2)) return PB_Execute();
 			}
 			TNT1 AAA 1 {
 				A_Setangle(angle + 0.3,SPF_INTERPOLATE);
-				if(JustPressed(BT_USER2)) PB_Execute();
+				if(JustPressed(BT_USER2)) return PB_Execute();
 			}
 			TNT1 A 0 {
 				A_TakeInventory("KnifeHasHit",1);

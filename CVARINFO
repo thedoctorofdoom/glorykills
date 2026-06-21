@@ -1,4 +1,5 @@
 //GLORY KILLS PORTED FROM D4D, BrutalDoom BlackEdition
+server bool isGKLoaded = false;
 server cheat bool be_ExecutionsON = true;
 server noarchive bool be_ExecutionHighlight = true;
 server noarchive bool be_MonsterStagger = true;
