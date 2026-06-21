@@ -1,4 +1,4 @@
-ACTOR ASGGuyGK : ASGGuy Replaces ASGGuy
+ACTOR ASGGuyGK : PB_ASGGuy Replaces PB_ASGGuy
 {
 	WoundHealth 25
     States
