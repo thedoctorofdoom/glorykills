@@ -134,15 +134,19 @@ Files are organized by tier matching PB's enemy classification:
 | `T4-Viles.txt` | T4 | Arch-viles, ice vile, summoners |
 | `Tz-Bosses.txt` | Boss | Cyberdemon, Mastermind, Annihilator |
 
-### ACS Scripts (`Source/`)
+### ACS Scripts (`Source/` → `ACS/`)
 
-| File | Script Numbers | Purpose |
-|------|---------------|---------|
-| `GloryChain.acs` | 6000, 6001 | Glory melee activation/deactivation (bound to `+glorysaw` alias) |
-| `GloryHUD.acs` | — | HUD overlay drawing Crucible energy, BP tokens, equipment status |
-| `BloodPunch.acs` | — | Monitors BP token count, plays ready sound at 5 tokens |
-| `EquipmentLanucher.acs` | 6003, 6005 | Equipment launcher cooldown timers and activation. Grants `FlameBelchReady` and `IceBombReady` at spawn so equipment is available immediately |
-| `lowhealth.acs` | — | Low health/armor warning sound system |
+The shipped `ACS/*.o` objects are compiled from `Source/*.acs` with `acc -i <path-to-includes> Source/<name>.acs ACS/<output>.o`. Three source-to-output names deliberately do not match — do not "fix" them; `LOADACS.txt` depends on the output names:
+
+| File | Output object | `#library` name | Script Numbers | Purpose |
+|------|---------------|-----------------|---------------|---------|
+| `GloryChain.acs` | `ACS/GloryMelee.o` | `glorymelee` | 6000, 6001 | Glory melee activation/deactivation (bound to `+glorysaw` alias) |
+| `GloryHUD.acs` | `ACS/GloryHUD.o` | `gloryhud` | — | HUD overlay drawing Crucible energy, BP tokens, equipment status |
+| `BloodPunch.acs` | `ACS/BloodPunch.o` | `BloodPunch.acs` | — | Monitors BP token count, plays ready sound at 5 tokens |
+| `EquipmentLanucher.acs` | `ACS/EquipmentLanucher.o` | `gkequipment` | 6003, 6005 | Equipment launcher cooldown timers and activation. Grants `FlameBelchReady` and `IceBombReady` at spawn so equipment is available immediately |
+| `lowhealth.acs` | `ACS/lowhealth.o` | `lowhealth.acs` | — | Low health/armor warning sound system |
+
+Each `#library` name must be unique across all five sources — duplicate names risk one library being skipped at load time. Three scripts previously shared `#library "commands"`; that was corrected in Sept 2026 alongside a fix to `lowhealth.acs`'s low-armor check, which had been testing `CheckInventory("Armor")` against a class that doesn't exist (PB's armor item is `BasicArmor`), so the low-armor alert never fired.
 
 ### Shader
 

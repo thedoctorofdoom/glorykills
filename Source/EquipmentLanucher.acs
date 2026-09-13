@@ -1,4 +1,4 @@
-#library "commands"
+#library "gkequipment"
 #include "zcommon.acs"
 #define MAX_VOLUME 127
 
@@ -43,13 +43,13 @@ script "GKEquipmentLauncher" ENTER
 			GiveInventory("CoolIceBomb",1);
 		}
 		
-		if(FBCooldown_tic == FlameBelch_Cooldown)
+		if(FBCooldown_tic >= FlameBelch_Cooldown)
 		{
 			TakeInventory("CoolFlameBelch", FlameBelch_Cooldown);
 			GiveInventory("FlameBelchReady", 1);
 			LocalAmbientSound("Equip_flameready", MAX_VOLUME);
 		}
-		if(IBCooldown_tic == IceBomb_Cooldown)
+		if(IBCooldown_tic >= IceBomb_Cooldown)
 		{
 			TakeInventory("CoolIceBomb", IceBomb_Cooldown);
 			GiveInventory("IceBombReady", 1);
@@ -57,5 +57,4 @@ script "GKEquipmentLauncher" ENTER
 		}
 		Delay(35);
 	}
-	Delay(35);
 }

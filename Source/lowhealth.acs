@@ -2,7 +2,6 @@
 #include "zcommon.acs"
 
 #define MAX_VOLUME 127
-#define MAX_PLAYER_HEALTH 200
 
 
 //lowhealth scripts - from BoA
@@ -10,8 +9,15 @@ script "lowhealth" ENTER
 {
 	bool LowHP;
 
-	while(GetCVar("be_LowHealthAlert"))
+	while(true)
 	{
+		if (!GetCVar("be_LowHealthAlert"))
+		{
+			LowHP = false;
+			Delay(1);
+			continue;
+		}
+
 		int health = GetActorProperty(0, APROP_HEALTH);
 
 		if (health <= GetCVar("sv_LowHealthValue"))
@@ -34,10 +40,18 @@ script "lowarmor" ENTER
 {
 	bool LowArmor;
 	bool ArmorEquip;
-	
-	while(GetCVar("be_LowArmorAlert")
+
+	while(true)
 	{
-		int Armor = CheckInventory("Armor");
+		if (!GetCVar("be_LowArmorAlert"))
+		{
+			LowArmor = false;
+			ArmorEquip = false;
+			Delay(1);
+			continue;
+		}
+
+		int Armor = CheckInventory("BasicArmor");
 		if (Armor > GetCVar("sv_LowArmorValue"))
 		{
 			ArmorEquip = true;

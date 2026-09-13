@@ -1,11 +1,10 @@
-#library "commands"
+#library "gloryhud"
 #include "zcommon.acs"
 
 
 script "GloryHud" ENTER
 {
 	int BPtoken;
-	int CrucibleSelect;
 	int CrucibleAmmo;
 	int FBMode;
 	int ICMode;
@@ -18,9 +17,7 @@ script "GloryHud" ENTER
 		int x = GetCVar ("sv_fuelhud_x");
 		int y = GetCVar ("sv_fuelhud_y");
 		int offset = 0;
-		int life = GetActorProperty(0, APROP_HEALTH);
 		BPtoken = CheckInventory("BPtoken");
-		CrucibleSelect = CheckInventory("CrucibleToken");
 		CrucibleAmmo = CheckInventory("CrucibleEnergy");
 		FBMode = CheckInventory("FlameBelchReady");
 		ICMode = CheckInventory("IceBombReady");
@@ -99,9 +96,10 @@ script "GloryHud" ENTER
 			HudMessage(s:"A"; HUDMSG_ALPHA, 1121, CR_UNTRANSLATED, (width / 2 + x + offset<<16), (height / 2 + y <<16), 0, 0.85);
 			
 			if(BPtoken == 0) SetFont("BPAMMO10");
-			if(BPtoken == 2) SetFont("BPAMMO11");
-			if(BPtoken == 3) SetFont("BPAMMO12");
-			if(BPtoken == 4) SetFont("BPAMMO13");
+			if(BPtoken == 1) SetFont("BPAMMO11");
+			if(BPtoken == 2) SetFont("BPAMMO12");
+			if(BPtoken == 3) SetFont("BPAMMO13");
+			if(BPtoken == 4) SetFont("BPAMMO14");
 			if(BPtoken == 5) SetFont("BPAMMO14");
 			offset = 43;
 
@@ -123,7 +121,14 @@ script "GloryHud" ENTER
 		
 	}
 		else
-		SetFont("Blank");
+		{
+			SetFont("Blank");
+			HudMessage(s:""; HUDMSG_ALPHA, 1120, CR_UNTRANSLATED, 0, 0, 0, 0.0);
+			HudMessage(s:""; HUDMSG_ALPHA, 1121, CR_UNTRANSLATED, 0, 0, 0, 0.0);
+			HudMessage(s:""; HUDMSG_ALPHA, 1122, CR_UNTRANSLATED, 0, 0, 0, 0.0);
+			HudMessage(s:""; HUDMSG_ALPHA, 1123, CR_UNTRANSLATED, 0, 0, 0, 0.0);
+			HudMessage(s:""; HUDMSG_ALPHA, 1124, CR_UNTRANSLATED, 0, 0, 0, 0.0);
+		}
 		Delay(1);
 	}
 }

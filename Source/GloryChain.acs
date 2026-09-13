@@ -1,4 +1,4 @@
-#library "commands"
+#library "glorymelee"
 #include "zcommon.acs"
 
 Script 6000 (VOID) NET
