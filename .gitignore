@@ -20,3 +20,6 @@ desktop.ini
 # Local-only audit notes (upstream sync writeups, smoke-test logs, scratch investigations)
 /docs/
 /execution_sound_investigation.md
+
+# Local-only macOS test harness (machine-specific paths, not for the shared remote)
+/tools/smoke-test-macos.sh
