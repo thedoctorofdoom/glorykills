@@ -1,5 +1,47 @@
 extend class PB_WeaponBase
 {
+	// PB's PB_ExecutionHandlerString() dispatches its bespoke executions with an
+	// exact-class-name switch. Every monster it names is one this addon replaces
+	// with a ...GK subclass, so under GloryKills that switch never matches and
+	// every execution degrades to Execution_Generic. Map the GK names onto the
+	// same PB helpers, then defer to PB for everything else.
+	//
+	// Mirror PB's case list exactly rather than testing `monster is 'PB_Whatever'`:
+	// PB_ShotgunGuyHelmet and PB_RiotShieldGuy descend from PB_ShotgunGuy but PB
+	// deliberately routes them to its default branch, and an inheritance test
+	// would silently promote them to the bespoke shotgun fatalities.
+	action StateLabel GK_ExecutionHandlerString(Actor monster) {
+
+		name enemy = monster.getClassName();
+
+		switch(enemy){
+			// Zombieman
+			case 'PB_ZombieManGK':
+				return PB_ExecuteZombieMan();
+			case 'PB_PistolZombieman1GK':
+				return PB_ExecuteZombieMan();
+			case 'PB_HelmetZombiemanGK':
+				return PB_ExecuteZombieMan();
+			case 'PB_PistolZombieman2GK':
+				return PB_ExecuteZombieMan();
+
+			// Imp
+			case 'PB_Imp1GK':
+				return PB_ExecuteImp();
+
+			// Shotgun Guy
+			case 'PB_ShotgunGuyGK':
+				return PB_ExecuteShotguny();
+
+			// Cacodemon
+			case 'PB_CacodemonGK':
+				return PB_ExecuteCacodemon();
+
+			default:
+				return PB_ExecutionHandlerString(monster);
+		}
+	}
+
     action void PB_ExecuteGK() {
 		if(CountInv("GrabbedBarrel") >= 1 || CountInv("GrabbedFlameBarrel") >= 1 || CountInv("GrabbedIceBarrel") >= 1) { return; }
 	
@@ -55,7 +97,7 @@ extend class PB_WeaponBase
 							A_SetPitch(-pitchToMonster);
 							PB_SetPlayerExecutionProperties();
 							
-							StateLabel st = PB_ExecutionHandlerString(monster);
+							StateLabel st = GK_ExecutionHandlerString(monster);
 							monster.A_Die("Execution");
 							A_Overlay(PSP_WEAPON,st);
 							A_OverlayOffset(PSP_WEAPON,0,32);

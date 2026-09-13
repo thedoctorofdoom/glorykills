@@ -10,7 +10,7 @@ This is a [UZDoom](https://zdoom.org/downloads) mod add-on for **Project Brutali
 - **Equipment Launcher** — Flame Belch and Ice Bomb on cooldown timers
 - **Pinata System** — health, armor, and ammo drops from executions with vacuum collection
 
-The mod targets **ZScript version 4.14.0** (declared in `ZSCRIPT.zc`) and extends PB's `PB_WeaponBase` class via `extend class`.
+The mod targets **ZScript version 5.0** (declared in `ZSCRIPT.zc`, matching PB's own `version "5.0"`) and extends PB's `PB_WeaponBase` class via `extend class`. This requires the **UZDoom 5.0** release or newer; 4.14.x will not load PB at all.
 
 ---
 
@@ -47,7 +47,7 @@ This mod uses **both DECORATE and ZScript**. They serve different roles:
 ### Include Chains
 
 ```
-DECORATE                         ZSCRIPT.zc (Version "4.14.0")
+DECORATE                         ZSCRIPT.zc (Version "5.0")
 ├── GLORYKILL.txt                ├── zscript/Monsters/Imps.zc
 ├── Crucible.txt                 ├── zscript/Monsters/Sergeants.zc
 ├── SOULCUBE.txt                 ├── zscript/Monsters/ZombieMen.zc
@@ -95,7 +95,7 @@ DECORATE                         ZSCRIPT.zc (Version "4.14.0")
 
 | File | Role |
 |------|------|
-| `GloryKills/BaseWeapon_Glorykill.zsc` | `extend class PB_WeaponBase` — glory kill execution logic (`PB_ExecuteGK()`), Crucible weapon states, Blood Punch states, Equipment Launcher states (Flame Belch / Ice Bomb), QuickMelee override |
+| `GloryKills/BaseWeapon_Glorykill.zsc` | `extend class PB_WeaponBase` — glory kill execution logic (`PB_ExecuteGK()`), the `GK_ExecutionHandlerString()` execution dispatcher (see Compatibility Notes), Crucible weapon states, Blood Punch states, Equipment Launcher states (Flame Belch / Ice Bomb), QuickMelee override |
 | `GloryKills/GK_EquipmentHandler.zsc` | `EventHandler` — routes inventory token signals to weapon states each tick. Uses a `bool[] prevGloryMelee` array for rising-edge detection of `DoGloryMelee` (Crucible key press) and routes to `GloryMelee` state; detects `DoShoulderCannon` and routes to `FireShoulderCannon`. Guard checks: skips if player is dead (`health <= 0`), has `CantDoAction`, or weapon's `executingEnemy` is true |
 | `Weapons/BaseWeapon_Melee.zsc` | `extend class PB_WeaponBase` — melee combat system: knife attacks, kicks (standard/air/slide/drop), barrel interactions, bloody knife overlays. Includes `GloryKills/BaseWeapon_Glorykill.zsc`. Overrides PB's own `BaseWeapon_Melee.zsc` via VFS |
 | `Weapons/BaseWeapon_Functions.zsc` | **DELETED** — was a stale copy of PB's own file; shipping it in the addon overrode PB's updated version via the VFS, breaking PB features. PB's own version is loaded from PB's archive. Do NOT re-add this file. |
@@ -338,6 +338,8 @@ Key compatibility points (assumed true for a current `PB_Staging` sync; confirm 
 - `PB_Fuel`, `PB_RocketAmmo` ammo classes must exist where this add-on expects them
 - The VFS override mechanism (add-on `BaseWeapon_Melee.zsc` replaces PB’s version) must remain valid for PB’s include chain on `PB_Staging`
 - `BaseWeapon_Functions.zsc` must **not** be shipped in the add-on — PB’s own version must load from PB’s archive; shipping a stale override breaks PB features
+- `PB_Execute()` is `action void` as of the Sept 2026 sync. Do not write `return PB_Execute();` — it no longer yields a state to jump to, and PB's own `BaseWeapon_Melee.zsc` calls it bare
+- Any file the add-on shares a path with in PB overrides PB's copy, since the add-on loads last. Keep the shared-path list to `BaseWeapon_Melee.zsc` only. Ten stale `Graphics/Weapons/Plasma Rifle/PLSAMMO*.png` files were removed in the Sept 2026 sync for exactly this reason — they were silently replacing PB's plasma rifle ammo HUD
 
 ### PB's native `pb_ExecutionHandler` (May 2026 sync)
 
@@ -350,6 +352,22 @@ This does **not** break GloryKills, but creates two harmless interactions to be 
 
 If the double-indicator becomes a concern, hiding PB's frame for GK-staggered monsters would require cooperation from the PB-side `pb_ExecutionHandler` (out of scope for an add-on), or the user can disable it via `pb_execution_box`.
 
+### PB's bespoke executions and the dispatcher coupling (Sept 2026 sync) — RECHECK EVERY SYNC
+
+PB_Staging ships `zscript/Weapons/BaseWeapon_Executions.zsc`, a large set of bespoke per-monster fatality animations (`Execution_Imp1`-`3`, `Execution_Cacodemon1`, `Execution_ShotgunGuy1`-`6`, `Execution_Zombieman1`-`6`, plus `Execution_Generic` and `Execution_Fast`). Each spawns a `PB_<Monster>_Execution_*` prop actor from `actors/Brutality/Brutalities*.dec` which carries the first-person visuals.
+
+They are selected by `PB_ExecutionHandlerString()` in PB's `BaseWeapon_Functions.zsc`, which switches on **`monster.getClassName()` — an exact-name match**. Every monster it names is one this add-on replaces with a `...GK` subclass, so under GloryKills that switch never matches and every execution silently degrades to `Execution_Generic`.
+
+The add-on works around this with `GK_ExecutionHandlerString()` in [zscript/GloryKills/BaseWeapon_Glorykill.zsc](zscript/GloryKills/BaseWeapon_Glorykill.zsc), which maps the GK names onto the same PB helpers and defers to `PB_ExecutionHandlerString()` for everything else. `PB_ExecuteGK()` calls the GK dispatcher instead of PB's.
+
+**This is the single most fragile PB coupling in the add-on. On every PB_Staging sync, diff PB's `PB_ExecutionHandlerString()` case list against `GK_ExecutionHandlerString()`.** If PB adds a bespoke fatality for a monster GloryKills replaces, the add-on must add the matching `...GK` case or that animation will never play. New cases fail silently — the generic execution still runs, so nothing errors and nothing appears in a smoke-test log.
+
+Deliberately mirror PB's case list rather than testing `monster is 'PB_Whatever'`: `PB_ShotgunGuyHelmet` and `PB_RiotShieldGuy` descend from `PB_ShotgunGuy` but PB routes them to its default branch, and an inheritance test would silently promote them to the bespoke shotgun fatalities.
+
+PB also added `zscript/Weapons/BaseWeapon_Equipment.zsc` (states `UseEquipment`, `SwitchEquipment`, `ThrowGrenade`, `ThrowMine`, `LeechBeam`, `FireRevGun`…). None of its state labels collide with the add-on's Equipment Launcher states (`FireShoulderCannon`, `UseFlameBelch`, `UseIceBomb`, `FireIceBomb`…), but it is a new file in PB's weapon include chain worth re-checking for collisions when adding weapon states.
+
+PB's current weapon include order in its `ZSCRIPT.zc` is `BaseWeapon.zc`, `BaseWeapon_Functions.zsc`, `BaseWeapon_Equipment.zsc`, `BaseWeapon_Melee.zsc` (VFS-overridden by this add-on), `BaseWeapon_Executions.zsc`, `BaseWeapon_Barrels.zsc`.
+
 ---
 
 ## Known Issues and Quirks
@@ -359,6 +377,11 @@ If the double-indicator becomes a concern, hiding PB's frame for GK-staggered mo
 - `EquipmentLanucher.acs` has a typo in the filename ("Lanucher" vs "Launcher")
 - Backup files exist in `Monsters/` (`*_Backup.txt`) — these are not included by `DECORATE` and should be ignored
 - Unused monster definitions exist in `zscript/Monsters/Unused/`
+- `zscript/Monsters/BuffedCacoGK.zc` and `BuffedArachnoGK.zc` were deleted in the Sept 2026 sync — their parents `PB_CacodemonBuffed` / `PB_Arachnotron1Buffed` no longer exist upstream (PB merged the buffed states into the base classes). `Monsters/T4-Viles_Backup.txt` still references the removed `PB_FleshWizard` and `PB_Icevile`, but is not included by `DECORATE`
+- Local build/test helpers live in `tools/`: `Pack-GloryKills.ps1` (Windows, rebuilds the load-folder zip) and `smoke-test-macos.sh` (macOS headless compile + MAP01 run). Neither is shipped content
 - The `be_StaggerLenght` CVar has a typo ("Lenght" vs "Length") — changing it would break saved configs
-- Some ZScript monsters may still have `Death.Execution` states that use only invisible `TNT1` frames with `Stop` instead of visible sprite frames with `Goto Super::Death.SSG` — these cause the monster to vanish on glory kill. `PB_Imp1GK` was fixed; see plan `fix_imp1_gk_disappear` for the pattern. Remaining candidates: `PB_HelmetZombiemanGK`, `PB_PistolZombieman1GK`, `PB_PistolZombieman2GK`
-- A related but distinct failure mode is **sprite-prefix mismatch** in `Death.Execution`: the state has visible frames, but uses a vanilla Doom sprite prefix (e.g. `HEAD` for Cacodemon, `POSS` for zombies) instead of PB's redesigned sprite prefix (e.g. `HEA1`). The monster briefly "reverts to its vanilla appearance" during the execution windup before `Super::Death.*` takes over. `PB_CacodemonGK` was fixed — swapped `HEAD A 4` / `HEAD F 21` → `HEA1 BC 4` / `HEA1 E 21` in [zscript/Monsters/Cacodemon.zc](zscript/Monsters/Cacodemon.zc) to match PB's own `PB_Cacodemon.Death.Execution`. When auditing the remaining vanishing-frames candidates above, also check their sprite prefixes against the parent PB class's `See`/`Spawn`/`Death.Execution` states.
+- **RESOLVED (Sept 2026) — "monster vanishes on glory kill".** This was long recorded as a bug in `Death.Execution` states that use invisible `TNT1` frames with `Stop` instead of visible frames with `Goto Super::Death.SSG`, and `PB_Imp1GK` was "fixed" by giving it visible frames. That diagnosis was wrong. Vanishing is PB's *intended* design for the monsters it has bespoke fatalities for: PB's player-side `Execution_*` overlay spawns a `PB_<Monster>_Execution_*` prop actor that carries all the visuals, so the real monster is meant to disappear. The monster looked like it vanished into nothing only because the execution dispatcher was never routing to the bespoke overlay (see Compatibility Notes). With `GK_ExecutionHandlerString()` in place, `PB_Imp1GK`, `PB_ShotgunGuyGK`, `PB_ZombieManGK`, `PB_HelmetZombiemanGK`, `PB_PistolZombieman1GK` and `PB_PistolZombieman2GK` have been returned to the vanish pattern deliberately. Do not "fix" them back to visible frames.
+  - The correct rule: a GK monster's `Death.Execution` should vanish **only if** its PB parent's does. Check the parent before changing one. `PB_CarbineZombiemanGK` and `PB_PlasmaZombieGK` keep visible frames because PB routes them to the generic execution, and `PB_CacodemonGK` keeps visible frames because PB's own `PB_Cacodemon.Death.Execution` plays `HEA1` frames and ends in `Goto Death.SSG`.
+- A related but distinct failure mode is **sprite-prefix mismatch** in `Death.Execution`: the state has visible frames, but uses a vanilla Doom sprite prefix (e.g. `HEAD` for Cacodemon, `POSS` for zombies) instead of PB's redesigned sprite prefix (e.g. `HEA1`). The monster briefly "reverts to its vanilla appearance" during the execution windup before `Super::Death.*` takes over. `PB_CacodemonGK` was fixed — swapped `HEAD A 4` / `HEAD F 21` → `HEA1 BC 4` / `HEA1 E 21` in [zscript/Monsters/Cacodemon.zc](zscript/Monsters/Cacodemon.zc) to match PB's own `PB_Cacodemon.Death.Execution`. When a GK monster is supposed to keep visible frames, check its sprite prefixes against the parent PB class's `See`/`Spawn`/`Death.Execution` states.
+- State labels and class names are **case-insensitive** in GZDoom/UZDoom. `Goto Super::Death.cut` resolves to a parent's `Death.Cut:` label without issue — PB itself defines both spellings for the single `Cut` damage type. Do not "normalize" these; it is churn, not a fix. The same applies to `BPToken`/`BPtoken` and `ADSmode`/`ADSMode`.
+- Line endings: the repo ships a `.gitattributes` with `* text=auto eol=crlf` (and `*.sh text eol=lf`). The editor writes CRLF while git stores LF, and without this every text file reports as modified with thousands of identical-content line flips. If you see that symptom, `.gitattributes` is missing or was reverted.

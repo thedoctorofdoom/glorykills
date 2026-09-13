@@ -85,14 +85,12 @@ Class PB_ZombieManGK : PB_ZombieMan Replaces PB_ZombieMan
 				A_FaceTarget();
 				A_NoBlocking();
 			}
-			POSS A 4 ;
-			TNT1 A 0 A_Pain;
-			POSS G 21;
-			TNT1 A 0 A_Recoil(4);
+			// Award first, then vanish: PB's Execution_Zombieman* overlay spawns a
+			// PB_Zombieman_Execution_* prop that carries the fatality visuals, so a
+			// visible corpse animation here would play on top of it.
 			TNT1 A 0 A_GiveToTarget("BPtoken",2);
 			TNT1 A 0 A_SpawnItemEx("GloryLowPinataSpawn",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360));
-			TNT1 A 0;
-			Goto Super::Death.SSG;
+			Stop;
 	}
 }
 
@@ -290,13 +288,10 @@ Class PB_HelmetZombiemanGK: PB_HelmetZombieman Replaces PB_HelmetZombieman
 			A_FaceTarget();
 			A_NoBlocking();
 		}
-		ZIV1 A 4;
-		TNT1 A 0 A_Pain();
-		ZIV1 A 21;
-		TNT1 A 0 A_Recoil(4);
+		// Vanishes so PB's Execution_Zombieman* prop carries the fatality visuals.
 		TNT1 A 0 A_GiveToTarget("BPtoken",2);
 		TNT1 A 0 A_SpawnItemEx("GloryLowPinataSpawn",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360));
-		Goto Super::Death.SSG;
+		Stop;
 	}
 }
 
@@ -392,13 +387,10 @@ Class PB_PistolZombieman2GK: PB_PistolZombieman2 Replaces PB_PistolZombieman2
 			A_FaceTarget();
 			A_NoBlocking();
 		}
-		9OS2 A 4;
-		TNT1 A 0 A_Pain();
-		9OS2 A 21;
-		TNT1 A 0 A_Recoil(4);
+		// Vanishes so PB's Execution_Zombieman* prop carries the fatality visuals.
 		TNT1 A 0 A_GiveToTarget("BPtoken",2);
 		TNT1 A 0 A_SpawnItemEx("GloryLowPinataSpawn",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360));
-		Goto Super::Death.SSG;
+		Stop;
 	}
 }
 
@@ -494,13 +486,10 @@ Class PB_PistolZombieman1GK: PB_PistolZombieman1 Replaces PB_PistolZombieman1
 			A_FaceTarget();
 			A_NoBlocking();
 		}
-		PSPO A 4;
-		TNT1 A 0 A_Pain();
-		PSPO G 21;
-		TNT1 A 0 A_Recoil(4);
+		// Vanishes so PB's Execution_Zombieman* prop carries the fatality visuals.
 		TNT1 A 0 A_GiveToTarget("BPtoken",2);
 		TNT1 A 0 A_SpawnItemEx("GloryLowPinataSpawn",0,0,Height / 2,random(0,8),0,random(0,8),random(0,360));
-		Goto Super::Death.SSG;
+		Stop;
 	}
 }
 
