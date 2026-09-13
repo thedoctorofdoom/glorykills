@@ -1,0 +1,30 @@
+# Line-ending policy.
+#
+# This project is developed primarily on Windows and the editor writes CRLF, so
+# text files are checked out CRLF. `text=auto` still normalizes them to LF inside
+# the repository, which keeps diffs meaningful and stops the whole tree from
+# showing as modified after a platform switch.
+* text=auto eol=crlf
+
+# Shell scripts must stay LF or the shebang breaks when run on macOS/Linux.
+*.sh text eol=lf
+
+# Binary assets: never touch, never diff as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.psd binary
+*.wad binary
+*.pk3 binary
+*.zip binary
+*.o binary
+*.wav binary
+*.ogg binary
+*.flac binary
+*.mp3 binary
+*.ttf binary
+*.fon2 binary
+*.md5mesh binary
+*.md5anim binary
+*.obj binary
+*.icns binary
